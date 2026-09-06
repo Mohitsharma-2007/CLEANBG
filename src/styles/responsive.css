@@ -4,7 +4,7 @@
 
 @media (max-width: 1200px) {
   .tool-layout {
-    grid-template-columns: 200px 1fr 260px;
+    grid-template-columns: 200px 1fr var(--right-panel-width);
   }
 
   .sidebar-dropzone {

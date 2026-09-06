@@ -291,7 +291,7 @@ export function showImageOnCanvas(
   mainCanvas.style.objectFit = 'contain';
 }
 
-export function updateBrushCursor(x: number, y: number, size: number, show: boolean): void {
+export function updateBrushCursor(x: number, y: number, size: number, show: boolean, tool: string = 'remove'): void {
   const cursor = document.getElementById('brush-cursor');
   if (!cursor) return;
   if (!show) {
@@ -299,12 +299,30 @@ export function updateBrushCursor(x: number, y: number, size: number, show: bool
     return;
   }
   const cs = state.getCanvasState();
-  const scaledSize = size * cs.zoom;
+  const scaledSize = Math.max(8, size * cs.zoom);
   cursor.style.display = 'block';
   cursor.style.left = `${x}px`;
   cursor.style.top = `${y}px`;
   cursor.style.width = `${scaledSize}px`;
   cursor.style.height = `${scaledSize}px`;
+
+  if (tool === 'keep') {
+    cursor.style.borderColor = '#16A34A';
+    cursor.style.backgroundColor = 'rgba(22, 163, 74, 0.18)';
+    cursor.style.boxShadow = '0 0 8px rgba(22, 163, 74, 0.3)';
+  } else if (tool === 'eraser') {
+    cursor.style.borderColor = '#F59E0B';
+    cursor.style.backgroundColor = 'rgba(245, 158, 11, 0.2)';
+    cursor.style.boxShadow = '0 0 8px rgba(245, 158, 11, 0.3)';
+  } else if (tool === 'wand') {
+    cursor.style.borderColor = '#8B5CF6';
+    cursor.style.backgroundColor = 'rgba(139, 92, 246, 0.2)';
+    cursor.style.boxShadow = '0 0 8px rgba(139, 92, 246, 0.35)';
+  } else {
+    cursor.style.borderColor = '#DC2626';
+    cursor.style.backgroundColor = 'rgba(220, 38, 38, 0.18)';
+    cursor.style.boxShadow = '0 0 8px rgba(220, 38, 38, 0.3)';
+  }
 }
 
 export function showModelLoading(show: boolean, text?: string, progress?: number): void {

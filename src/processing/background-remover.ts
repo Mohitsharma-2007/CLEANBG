@@ -211,7 +211,7 @@ export function applyMaskToImage(
 }
 
 /**
- * Apply manual brush stroke to mask
+ * Apply manual brush stroke to mask with smooth interpolation and hard mode support
  */
 export function applyBrushStroke(
   mask: Uint8ClampedArray,
@@ -219,28 +219,62 @@ export function applyBrushStroke(
   height: number,
   points: { x: number; y: number }[],
   brushSize: number,
-  value: number
+  value: number,
+  isHard: boolean = false
 ): void {
-  for (const point of points) {
-    const radius = brushSize / 2;
+  // If we have points, interpolate between consecutive points so fast mouse movement leaves no gaps
+  const interpolatedPoints: { x: number; y: number }[] = [];
+  if (points.length === 1) {
+    interpolatedPoints.push(points[0]);
+  } else {
+    const stepSize = Math.max(1, brushSize / 4);
+    for (let p = 0; p < points.length - 1; p++) {
+      const p1 = points[p];
+      const p2 = points[p + 1];
+      const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+      const steps = Math.max(1, Math.ceil(dist / stepSize));
+      for (let s = 0; s < steps; s++) {
+        const t = s / steps;
+        interpolatedPoints.push({
+          x: Math.round(p1.x + (p2.x - p1.x) * t),
+          y: Math.round(p1.y + (p2.y - p1.y) * t),
+        });
+      }
+    }
+    interpolatedPoints.push(points[points.length - 1]);
+  }
+
+  const radius = Math.max(1, brushSize / 2);
+  const radiusSq = radius * radius;
+
+  for (const point of interpolatedPoints) {
     const x0 = Math.max(0, Math.floor(point.x - radius));
     const y0 = Math.max(0, Math.floor(point.y - radius));
     const x1 = Math.min(width - 1, Math.ceil(point.x + radius));
     const y1 = Math.min(height - 1, Math.ceil(point.y + radius));
 
     for (let y = y0; y <= y1; y++) {
+      const dy = y - point.y;
+      const dySq = dy * dy;
+      const rowOffset = y * width;
+
       for (let x = x0; x <= x1; x++) {
         const dx = x - point.x;
-        const dy = y - point.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist <= radius) {
-          const t = 1 - (dist / radius);
-          const falloff = t * t * (3 - 2 * t); // smoothstep
-          const idx = y * width + x;
-          if (value === 0) {
-            mask[idx] = Math.max(0, Math.round(mask[idx] * (1 - falloff)));
+        const distSq = dx * dx + dySq;
+
+        if (distSq <= radiusSq) {
+          const idx = rowOffset + x;
+          if (isHard) {
+            mask[idx] = value;
           } else {
-            mask[idx] = Math.min(255, Math.round(mask[idx] + (255 - mask[idx]) * falloff));
+            const dist = Math.sqrt(distSq);
+            const t = 1 - (dist / radius);
+            const falloff = t * t * (3 - 2 * t); // smoothstep
+            if (value === 0) {
+              mask[idx] = Math.max(0, Math.round(mask[idx] * (1 - falloff)));
+            } else {
+              mask[idx] = Math.min(255, Math.max(mask[idx], Math.round(255 * falloff)));
+            }
           }
         }
       }

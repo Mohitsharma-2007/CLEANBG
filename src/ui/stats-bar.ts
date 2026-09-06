@@ -15,47 +15,53 @@ export function createStatsBar(): HTMLElement {
   bar.id = 'stats-bar';
 
   bar.innerHTML = `
-    <div class="stats-items">
-      <div class="stat-item">
-        <span class="stat-value highlight" id="stat-uploaded">0</span>
-        <span class="stat-label">Uploaded</span>
+    <div class="stats-left">
+      <div class="stat-chip">
+        <span class="stat-badge stat-badge-blue" id="stat-uploaded">0</span>
+        <span class="stat-chip-label">Uploaded</span>
       </div>
-      <div class="stat-divider"></div>
-      <div class="stat-item">
-        <span class="stat-value success" id="stat-completed">0</span>
-        <span class="stat-label">Completed</span>
+      <div class="stat-chip-divider"></div>
+      <div class="stat-chip">
+        <span class="stat-badge stat-badge-green" id="stat-completed">0</span>
+        <span class="stat-chip-label">Completed</span>
       </div>
-      <div class="stat-divider"></div>
-      <div class="stat-item">
-        <span class="stat-value" id="stat-processing">0</span>
-        <span class="stat-label">Processing</span>
+      <div class="stat-chip-divider"></div>
+      <div class="stat-chip">
+        <span class="stat-badge stat-badge-amber" id="stat-processing">0</span>
+        <span class="stat-chip-label">Processing</span>
       </div>
-      <div class="stat-divider"></div>
-      <div class="stat-item">
-        <span class="stat-value" id="stat-total-time">0.0s</span>
-        <span class="stat-label">Total Time</span>
+      <div class="stat-chip-divider"></div>
+      <div class="stat-chip">
+        <span class="stat-badge stat-badge-slate" id="stat-total-time">0.0s</span>
+        <span class="stat-chip-label">Total Time</span>
       </div>
-      <div class="stat-divider"></div>
-      <div class="stat-item">
-        <span class="stat-value" id="stat-avg-speed">—</span>
-        <span class="stat-label">Avg Speed</span>
+      <div class="stat-chip-divider"></div>
+      <div class="stat-chip">
+        <span class="stat-badge stat-badge-slate" id="stat-avg-speed">—</span>
+        <span class="stat-chip-label">Avg Speed</span>
       </div>
     </div>
+
+    <div class="stats-center">
+      <span class="engine-indicator-dot"></span>
+      <span class="engine-status-text">AI Neural Engine Ready · Hardware Accelerated</span>
+    </div>
+
     <div class="stats-right">
-      <div class="performance-select" style="display:flex; align-items:center; gap:12px;">
-        <label style="font-size:12px; font-weight:600; color:var(--color-text-muted);">Performance</label>
-        <div class="custom-select" id="custom-perf-select" style="position:relative; width: 170px;">
-          <div class="custom-select-trigger" id="custom-perf-trigger" style="display:flex; align-items:center; gap:6px; padding:6px 10px; border:1px solid var(--color-border); border-radius:var(--radius-md); background:var(--color-surface); cursor:pointer; font-size:13px; font-weight:500;">
-            ${ICONS.scale} <span id="custom-perf-label" style="flex:1;">Balanced</span> ${ICONS.chevronDown}
+      <div class="performance-select-wrap">
+        <span class="perf-label">Engine Mode</span>
+        <div class="custom-select" id="custom-perf-select">
+          <div class="custom-select-trigger" id="custom-perf-trigger">
+            ${ICONS.scale} <span id="custom-perf-label">Balanced</span> ${ICONS.chevronDown}
           </div>
-          <div class="custom-select-options" id="custom-perf-options" style="display:none; position:absolute; bottom:100%; left:0; right:0; margin-bottom:4px; background:var(--color-surface); border:1px solid var(--color-border); border-radius:var(--radius-md); box-shadow:var(--shadow-md); z-index:50; overflow:hidden;">
-            <div class="custom-option selected" data-value="balanced" style="display:flex; align-items:center; gap:8px; padding:8px 10px; cursor:pointer; font-size:13px; font-weight:500; border-bottom:1px solid var(--color-border);">
-              ${ICONS.scale} Balanced
+          <div class="custom-select-options" id="custom-perf-options" style="display:none;">
+            <div class="custom-option selected" data-value="balanced">
+              ${ICONS.scale} Balanced Mode
             </div>
-            <div class="custom-option" data-value="speed" style="display:flex; align-items:center; gap:8px; padding:8px 10px; cursor:pointer; font-size:13px; font-weight:500; border-bottom:1px solid var(--color-border);">
+            <div class="custom-option" data-value="speed">
               ${ICONS.lightning} Speed Priority
             </div>
-            <div class="custom-option" data-value="quality" style="display:flex; align-items:center; gap:8px; padding:8px 10px; cursor:pointer; font-size:13px; font-weight:500;">
+            <div class="custom-option" data-value="quality">
               ${ICONS.sparkle} Quality Priority
             </div>
           </div>

@@ -60,6 +60,8 @@ export const ICONS = {
   get palette() { return '<morph-icon data-icon="Palette" size="20" stroke-width="2"></morph-icon>'; },
   get crop() { return '<morph-icon data-icon="Crop" size="20" stroke-width="2"></morph-icon>'; },
   get scale() { return '<morph-icon data-icon="Scale" size="16" stroke-width="2"></morph-icon>'; },
+  get sliders() { return '<morph-icon data-icon="Sliders" size="16" stroke-width="2"></morph-icon>'; },
+  get layers() { return '<morph-icon data-icon="Layers" size="16" stroke-width="2"></morph-icon>'; },
 };
 
 export function mountIcons() {

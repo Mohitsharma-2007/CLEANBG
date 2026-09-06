@@ -83,6 +83,8 @@ class ClearBGApp {
   private currentTool: string = 'remove';
   private brushSize: number = 25;
   private isDrawing: boolean = false;
+  private lastBrushPoint: { x: number; y: number } | null = null;
+  private canvasInteractionsBound: boolean = false;
   private currentViewMode: ViewMode = 'split';
 
   // Photoshop Color Adjustments & Layer Styles
@@ -118,7 +120,6 @@ class ClearBGApp {
     this.app.appendChild(this.authModal);
 
     this.setupEventListeners();
-    this.setupCanvasInteractions();
     this.setupKeyboardShortcuts();
     this.navigate(initialView);
     mountIcons();
@@ -151,6 +152,7 @@ class ClearBGApp {
     switch (view) {
       case 'remove-bg':
         this.mainContainer.appendChild(this.removeBgView);
+        this.setupCanvasInteractions();
         this.renderCurrentImage();
         break;
       case 'resize':
@@ -231,6 +233,15 @@ class ClearBGApp {
 
     events.on('toolChange', (tool: string) => {
       this.currentTool = tool;
+      if (['remove', 'keep', 'eraser', 'wand'].includes(tool) && this.currentViewMode === 'split') {
+        this.currentViewMode = 'result';
+        const vmodeBtn = document.getElementById('vmode-result');
+        if (vmodeBtn) {
+          document.querySelectorAll('[data-vmode]').forEach(b => b.classList.remove('active'));
+          vmodeBtn.classList.add('active');
+        }
+        this.refreshCanvasDisplay();
+      }
     });
 
     events.on('brushSizeChange', (size: number) => {
@@ -408,7 +419,7 @@ class ClearBGApp {
       topBar.querySelector('#full-studio-apply-btn')?.addEventListener('click', () => {
         try {
           if (editorInstance && typeof editorInstance.getCurrentImgData === 'function') {
-            const res = editorInstance.getCurrentImgData();
+            const res = editorInstance.getCurrentImgData({ name: 'cleanbg-studio', extension: 'png', quality: 1 }, 1);
             const dataUrl = res?.imageData?.imageBase64 || res?.imageBase64;
             if (dataUrl) {
               applyEditedDataUrl(dataUrl);
@@ -439,17 +450,22 @@ class ClearBGApp {
             TABS.ADJUST,
             TABS.FINETUNE,
             TABS.FILTERS,
-            TABS.RESIZE,
             TABS.ANNOTATE,
             TABS.WATERMARK,
+            TABS.RESIZE,
           ].filter(Boolean) : [],
-          defaultTabId: TABS?.ADJUST || 'Adjust',
+          defaultTabId: TABS?.FINETUNE || 'Finetune',
           defaultToolId: TOOLS?.BRIGHTNESS || 'Brightness',
-          savingPixelRatio: 4,
-          previewPixelRatio: window.devicePixelRatio || 2,
+          savingPixelRatio: 1,
+          previewPixelRatio: Math.min(2, window.devicePixelRatio || 1),
           showBackButton: false,
           disableSaveIfNoChanges: false,
           closeAfterSave: false,
+          useBackendTranslations: false,
+          useCloudimage: false,
+          observePluginContainerSize: true,
+          defaultSavedImageType: 'png',
+          defaultSavedImageQuality: 1,
           annotationsCommon: {
             fill: '#2563EB',
             stroke: '#2563EB',
@@ -811,6 +827,29 @@ class ClearBGApp {
 
     if (job?.result?.imageData) {
       this.processedImageData = job.result.imageData;
+      if (!this.currentMask) {
+        this.currentMask = new Uint8ClampedArray(this.processedImageData.width * this.processedImageData.height);
+        for (let i = 0; i < this.currentMask.length; i++) {
+          this.currentMask[i] = this.processedImageData.data[i * 4 + 3];
+        }
+        this.baseAIMask = new Uint8ClampedArray(this.currentMask);
+      }
+      if (!this.rawBaseImageData) {
+        const img = await this.loadImageElement(imageFile.file);
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(img, 0, 0);
+        const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        this.originalImageData = data;
+        this.rawBaseImageData = data;
+      }
+      if (this.historyStack.length === 0 && this.currentMask && this.processedImageData) {
+        this.historyStack = [{ mask: new Uint8ClampedArray(this.currentMask), processed: this.cloneImageData(this.processedImageData) }];
+        this.historyPointer = 0;
+        updateUndoRedoButtons(false, false);
+      }
       this.refreshCanvasDisplay();
     } else {
       const img = await this.loadImageElement(imageFile.file);
@@ -856,45 +895,66 @@ class ClearBGApp {
     const container = document.getElementById('canvas-container');
     const mainCanvas = document.getElementById('main-canvas') as HTMLCanvasElement;
     if (!container || !mainCanvas) return;
-
-    container.addEventListener('mousemove', (e) => {
-      const rect = container.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      updateBrushCursor(x, y, this.brushSize, true);
-
-      if (this.isDrawing && this.currentMask && this.rawBaseImageData) {
-        const pt = this.getCanvasPoint(e, mainCanvas);
-        this.paintBrushAt(pt.x, pt.y);
-      }
-    });
-
-    container.addEventListener('mouseleave', () => {
-      updateBrushCursor(0, 0, this.brushSize, false);
-      if (this.isDrawing) {
-        this.isDrawing = false;
-        this.pushHistorySnapshot();
-      }
-    });
+    if (this.canvasInteractionsBound) return;
+    this.canvasInteractionsBound = true;
 
     container.addEventListener('mousedown', (e) => {
       if ((e.target as HTMLElement).closest('#split-divider')) return;
       if (!this.currentMask || !this.rawBaseImageData) return;
+
+      // If user starts retouching while in split mode, auto-switch to cutout result
+      if (this.currentViewMode === 'split') {
+        this.currentViewMode = 'result';
+        const vmodeBtn = document.getElementById('vmode-result');
+        if (vmodeBtn) {
+          document.querySelectorAll('[data-vmode]').forEach(b => b.classList.remove('active'));
+          vmodeBtn.classList.add('active');
+        }
+        this.refreshCanvasDisplay();
+      }
+
       this.isDrawing = true;
-      const pt = this.getCanvasPoint(e, mainCanvas);
+      const activeCanvas = document.getElementById('main-canvas') as HTMLCanvasElement || mainCanvas;
+      const pt = this.getCanvasPoint(e, activeCanvas);
+      this.lastBrushPoint = pt;
 
       if (this.currentTool === 'wand') {
         this.magicWandErase(pt.x, pt.y);
         this.pushHistorySnapshot();
         this.isDrawing = false;
+        this.lastBrushPoint = null;
       } else {
-        this.paintBrushAt(pt.x, pt.y);
+        this.paintBrushSegment(pt, pt);
+      }
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!this.canvasInteractionsBound) return;
+      const activeContainer = document.getElementById('canvas-container');
+      const activeCanvas = document.getElementById('main-canvas') as HTMLCanvasElement;
+      if (!activeContainer || !activeCanvas) return;
+
+      const rect = activeContainer.getBoundingClientRect();
+      const inContainer = (
+        e.clientX >= rect.left && e.clientX <= rect.right &&
+        e.clientY >= rect.top && e.clientY <= rect.bottom
+      );
+
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      updateBrushCursor(x, y, this.brushSize, inContainer, this.currentTool);
+
+      if (this.isDrawing && this.currentMask && this.rawBaseImageData) {
+        const pt = this.getCanvasPoint(e, activeCanvas);
+        this.paintBrushSegment(this.lastBrushPoint || pt, pt);
+        this.lastBrushPoint = pt;
       }
     });
 
     window.addEventListener('mouseup', () => {
       if (this.isDrawing) {
         this.isDrawing = false;
+        this.lastBrushPoint = null;
         this.pushHistorySnapshot();
       }
     });
@@ -910,16 +970,20 @@ class ClearBGApp {
     };
   }
 
-  private paintBrushAt(x: number, y: number): void {
+  private paintBrushSegment(p1: { x: number; y: number }, p2: { x: number; y: number }): void {
     if (!this.currentMask || !this.rawBaseImageData) return;
-    const val = this.currentTool === 'remove' || this.currentTool === 'eraser' ? 0 : 255;
+    const isErase = this.currentTool === 'remove' || this.currentTool === 'eraser';
+    const val = isErase ? 0 : 255;
+    const isHard = this.currentTool === 'eraser';
+
     applyBrushStroke(
       this.currentMask,
       this.rawBaseImageData.width,
       this.rawBaseImageData.height,
-      [{ x, y }],
+      [p1, p2],
       this.brushSize,
-      val
+      val,
+      isHard
     );
     this.processedImageData = applyMaskToImage(this.rawBaseImageData, this.currentMask);
     this.refreshCanvasDisplay();
@@ -931,11 +995,13 @@ class ClearBGApp {
     const h = this.rawBaseImageData.height;
     const data = this.rawBaseImageData.data;
 
-    const startIdx = (startY * w + startX) * 4;
+    const clampedX = Math.max(0, Math.min(w - 1, startX));
+    const clampedY = Math.max(0, Math.min(h - 1, startY));
+    const startIdx = (clampedY * w + clampedX) * 4;
     const targetR = data[startIdx];
     const targetG = data[startIdx + 1];
     const targetB = data[startIdx + 2];
-    const tolerance = 35;
+    const tolerance = 38;
 
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {

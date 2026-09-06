@@ -6,20 +6,42 @@ export function createToolPanel(): HTMLElement {
   const panel = document.createElement('div');
   panel.className = 'right-panel';
   panel.innerHTML = `
-    <div class="right-panel-header" style="flex-direction: column; align-items: stretch; gap: 8px; padding-bottom: 8px;">
-      <div style="display: flex; align-items: center; justify-content: space-between;">
-        <span class="right-panel-title">Studio Tools</span>
-        <button class="btn btn-secondary btn-sm" id="btn-launch-editor-top" title="Open Full Photoshop Suite">
-          ${ICONS.wand} Open Full Studio
+    <div class="right-panel-header">
+      <div class="right-panel-top-row">
+        <div class="right-panel-brand">
+          <span class="right-panel-brand-icon">${ICONS.wand}</span>
+          <span class="right-panel-title">Studio Tools</span>
+        </div>
+        <button class="btn-studio-shortcut" id="btn-launch-editor-top" title="Open Full Studio Editor (Filerobot Suite)">
+          ${ICONS.sparkle}
+          <span>Full Studio</span>
         </button>
       </div>
-      <div class="right-panel-tabs" style="overflow-x: auto; scrollbar-width: none;">
-        <button class="right-panel-tab active" data-ptab="retouch" id="tab-retouch">Retouch</button>
-        <button class="right-panel-tab" data-ptab="adjust" id="tab-adjust">Adjust</button>
-        <button class="right-panel-tab" data-ptab="filters" id="tab-filters">Filters</button>
-        <button class="right-panel-tab" data-ptab="effects" id="tab-effects">Styles</button>
-        <button class="right-panel-tab" data-ptab="background" id="tab-bg">Backdrop</button>
-        <button class="right-panel-tab" data-ptab="export" id="tab-export">Export</button>
+      <div class="right-panel-tabs" role="tablist">
+        <button class="right-panel-tab active" data-ptab="retouch" id="tab-retouch" title="Retouch & Erase">
+          <span class="tab-icon">${ICONS.wand}</span>
+          <span class="tab-label">Retouch</span>
+        </button>
+        <button class="right-panel-tab" data-ptab="adjust" id="tab-adjust" title="Lighting & Color Adjustments">
+          <span class="tab-icon">${ICONS.sliders}</span>
+          <span class="tab-label">Adjust</span>
+        </button>
+        <button class="right-panel-tab" data-ptab="filters" id="tab-filters" title="Creative Preset Filters">
+          <span class="tab-icon">${ICONS.sparkle}</span>
+          <span class="tab-label">Filters</span>
+        </button>
+        <button class="right-panel-tab" data-ptab="effects" id="tab-effects" title="Sticker Outline, Shadow & Blur">
+          <span class="tab-icon">${ICONS.layers}</span>
+          <span class="tab-label">Styles</span>
+        </button>
+        <button class="right-panel-tab" data-ptab="background" id="tab-bg" title="Custom Backdrops & Gradients">
+          <span class="tab-icon">${ICONS.image}</span>
+          <span class="tab-label">Backdrop</span>
+        </button>
+        <button class="right-panel-tab" data-ptab="export" id="tab-export" title="Export & Quality">
+          <span class="tab-icon">${ICONS.download}</span>
+          <span class="tab-label">Export</span>
+        </button>
       </div>
     </div>
 
