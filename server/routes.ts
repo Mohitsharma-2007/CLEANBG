@@ -73,6 +73,7 @@ router.get('/history', async (req: AuthenticatedRequest, res: Response) => {
       height: row.height,
       thumbnail: row.thumbnail,
       resultBase64: row.resultBase64,
+      originalBase64: row.originalBase64 || null,
       settings: row.settings,
       timestamp: new Date(row.createdAt).getTime(),
     }));
@@ -99,6 +100,7 @@ router.post('/history', async (req: AuthenticatedRequest, res: Response) => {
       height,
       thumbnail,
       resultBase64,
+      originalBase64,
       settings,
     } = req.body;
 
@@ -118,6 +120,7 @@ router.post('/history', async (req: AuthenticatedRequest, res: Response) => {
           height: height || 0,
           thumbnail: thumbnail || '',
           resultBase64,
+          originalBase64: originalBase64 || null,
           settings: settings || {},
         },
         $setOnInsert: {

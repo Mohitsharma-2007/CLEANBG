@@ -19,6 +19,7 @@ export interface IHistory extends Document {
   height: number;
   thumbnail: string;
   resultBase64: string;
+  originalBase64?: string | null;
   settings: Record<string, any>;
   createdAt: Date;
   updatedAt: Date;
@@ -36,6 +37,7 @@ const HistorySchema = new Schema<IHistory>(
     height: { type: Number, default: 0 },
     thumbnail: { type: String, default: '' },
     resultBase64: { type: String, required: true },
+    originalBase64: { type: String, default: null },
     settings: { type: Schema.Types.Mixed, default: {} },
   },
   {

@@ -549,31 +549,59 @@ class ClearBGApp {
       if (!item || !item.resultBlob) return;
       this.navigate('remove-bg');
 
-      const img = new Image();
-      const url = URL.createObjectURL(item.resultBlob);
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.naturalWidth || item.width;
-        canvas.height = img.naturalHeight || item.height;
-        const ctx = canvas.getContext('2d')!;
-        ctx.drawImage(img, 0, 0);
-        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const procImg = new Image();
+      const procUrl = URL.createObjectURL(item.resultBlob);
+      procImg.onload = async () => {
+        const procCanvas = document.createElement('canvas');
+        procCanvas.width = procImg.naturalWidth || item.width;
+        procCanvas.height = procImg.naturalHeight || item.height;
+        const pctx = procCanvas.getContext('2d')!;
+        pctx.drawImage(procImg, 0, 0);
+        const procData = pctx.getImageData(0, 0, procCanvas.width, procCanvas.height);
+
+        // Load original un-cut image if stored in history
+        let origData: ImageData | null = null;
+        if (item.originalBlob) {
+          try {
+            const origImg = new Image();
+            const origUrl = URL.createObjectURL(item.originalBlob);
+            await new Promise<void>((resolve) => {
+              origImg.onload = () => {
+                const origCanvas = document.createElement('canvas');
+                origCanvas.width = origImg.naturalWidth || item.width;
+                origCanvas.height = origImg.naturalHeight || item.height;
+                const octx = origCanvas.getContext('2d')!;
+                octx.drawImage(origImg, 0, 0);
+                origData = octx.getImageData(0, 0, origCanvas.width, origCanvas.height);
+                URL.revokeObjectURL(origUrl);
+                resolve();
+              };
+              origImg.onerror = () => {
+                URL.revokeObjectURL(origUrl);
+                resolve();
+              };
+              origImg.src = origUrl;
+            });
+          } catch (e) {
+            console.warn('[History] Could not load originalBlob:', e);
+          }
+        }
 
         const fileName = item.name.endsWith('.png') ? item.name : `${item.name}.png`;
         const file = new File([item.resultBlob], fileName, { type: 'image/png' });
-        const imageFile = state.addImage(file, img);
+        const imageFile = state.addImage(file, procImg);
         state.set('currentImageId', imageFile.id);
 
-        this.rawBaseImageData = imgData;
-        this.originalImageData = imgData;
-        this.processedImageData = imgData;
-        this.currentMask = new Uint8ClampedArray(imgData.width * imgData.height);
+        this.rawBaseImageData = origData || procData;
+        this.originalImageData = origData || procData;
+        this.processedImageData = procData;
+        this.currentMask = new Uint8ClampedArray(procData.width * procData.height);
         for (let i = 0; i < this.currentMask.length; i++) {
-          this.currentMask[i] = imgData.data[i * 4 + 3];
+          this.currentMask[i] = procData.data[i * 4 + 3];
         }
         this.baseAIMask = new Uint8ClampedArray(this.currentMask);
 
-        this.historyStack = [{ mask: new Uint8ClampedArray(this.currentMask), processed: this.cloneImageData(imgData) }];
+        this.historyStack = [{ mask: new Uint8ClampedArray(this.currentMask), processed: this.cloneImageData(procData) }];
         this.historyPointer = 0;
         updateUndoRedoButtons(false, false);
 
@@ -585,11 +613,21 @@ class ClearBGApp {
         events.emit('notify', {
           type: 'success',
           title: 'Opened in Studio',
-          message: `"${item.name}" is now loaded and ready for editing!`,
+          message: origData
+            ? `"${item.name}" loaded with original photo and cutout (Split View ready!)`
+            : `"${item.name}" loaded and ready for editing!`,
         });
-        URL.revokeObjectURL(url);
+        URL.revokeObjectURL(procUrl);
       };
-      img.src = url;
+      procImg.onerror = () => {
+        URL.revokeObjectURL(procUrl);
+        events.emit('notify', {
+          type: 'error',
+          title: 'Load Failed',
+          message: 'Could not load image from history.',
+        });
+      };
+      procImg.src = procUrl;
     });
 
     // Photoshop Adjustments
@@ -720,8 +758,9 @@ class ClearBGApp {
         showModelLoading(false);
         this.refreshCanvasDisplay();
 
-        // Save into PostgreSQL & Local Cache
+        // Save into MongoDB Atlas & IndexedDB Cache
         const resBlob = await this.imageDataToBlob(processedData);
+        const origBlob = await this.imageDataToBlob(rawImageData);
         const resUrl = URL.createObjectURL(resBlob);
         saveHistory({
           name: imageFile.name,
@@ -732,6 +771,7 @@ class ClearBGApp {
           height: imageFile.height,
           thumbnail: resUrl,
           resultBlob: resBlob,
+          originalBlob: origBlob,
         });
       }
 

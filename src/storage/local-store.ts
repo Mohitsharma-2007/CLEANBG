@@ -9,6 +9,7 @@ export interface HistoryItem {
   height: number;
   thumbnail: string;
   resultBlob: Blob;
+  originalBlob?: Blob;
 }
 
 const DB_NAME = 'ClearBG_Storage';

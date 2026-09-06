@@ -74,6 +74,7 @@ async function renderHistoryItems(page: HTMLElement): Promise<void> {
     return `
       <div class="history-card" data-history-id="${item.id}" style="cursor:default;">
         <div class="history-thumb-wrapper" data-open-id="${item.id}" title="Click to view & edit ${item.name}">
+          ${item.originalBlob ? '<span class="history-orig-badge" style="position:absolute; top:8px; left:8px; font-size:0.68rem; padding:2px 7px; z-index:3; background:rgba(37,99,235,0.9); color:#fff; border-radius:4px; font-weight:700; box-shadow:0 1px 3px rgba(0,0,0,0.2);">Original Saved</span>' : ''}
           <img class="history-card-image checkerboard"
                src="${displayThumb}"
                alt="${item.name}"
@@ -184,6 +185,7 @@ function openHistoryLightbox(item: HistoryItem, onRefresh?: () => void): void {
   if (existing) existing.remove();
 
   const imgUrl = URL.createObjectURL(item.resultBlob);
+  const origImgUrl = item.originalBlob ? URL.createObjectURL(item.originalBlob) : null;
 
   const modal = document.createElement('div');
   modal.id = 'history-lightbox';
@@ -192,17 +194,26 @@ function openHistoryLightbox(item: HistoryItem, onRefresh?: () => void): void {
   modal.innerHTML = `
     <div class="history-lightbox-dialog">
       <div class="history-lightbox-header">
-        <div class="history-lightbox-title-group">
+        <div class="history-lightbox-title-group" style="display:flex; align-items:center; gap:10px;">
           <span class="badge badge-primary">High-Res Cutout</span>
+          ${origImgUrl ? '<span class="badge badge-success" style="background:#10B981; color:#fff;">Original Preserved</span>' : ''}
           <h3 class="history-lightbox-title">${item.name}</h3>
         </div>
-        <button class="history-lightbox-close" id="lightbox-close-btn" title="Close (Esc)">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-        </button>
+        <div style="display:flex; align-items:center; gap:12px;">
+          ${origImgUrl ? `
+            <div class="lightbox-view-toggle" style="display:inline-flex; border:1px solid var(--color-border); border-radius:6px; overflow:hidden;">
+              <button class="btn btn-sm btn-primary active" id="lb-view-cutout" style="padding:4px 10px; font-size:0.75rem; border-radius:0;">Cutout</button>
+              <button class="btn btn-sm btn-secondary" id="lb-view-orig" style="padding:4px 10px; font-size:0.75rem; border-radius:0;">Original</button>
+            </div>
+          ` : ''}
+          <button class="history-lightbox-close" id="lightbox-close-btn" title="Close (Esc)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
       </div>
 
       <div class="history-lightbox-body checkerboard">
-        <img src="${imgUrl}" alt="${item.name}" class="history-lightbox-img" />
+        <img id="history-lightbox-main-img" src="${imgUrl}" alt="${item.name}" class="history-lightbox-img" />
       </div>
 
       <div class="history-lightbox-footer">
@@ -231,8 +242,26 @@ function openHistoryLightbox(item: HistoryItem, onRefresh?: () => void): void {
 
   document.body.appendChild(modal);
 
+  const mainImg = modal.querySelector('#history-lightbox-main-img') as HTMLImageElement;
+
+  if (origImgUrl) {
+    const btnCutout = modal.querySelector('#lb-view-cutout') as HTMLElement;
+    const btnOrig = modal.querySelector('#lb-view-orig') as HTMLElement;
+    btnCutout?.addEventListener('click', () => {
+      btnCutout.className = 'btn btn-sm btn-primary active';
+      btnOrig.className = 'btn btn-sm btn-secondary';
+      if (mainImg) mainImg.src = imgUrl;
+    });
+    btnOrig?.addEventListener('click', () => {
+      btnOrig.className = 'btn btn-sm btn-primary active';
+      btnCutout.className = 'btn btn-sm btn-secondary';
+      if (mainImg) mainImg.src = origImgUrl;
+    });
+  }
+
   const cleanup = () => {
     URL.revokeObjectURL(imgUrl);
+    if (origImgUrl) URL.revokeObjectURL(origImgUrl);
     window.removeEventListener('keydown', handleKey);
     modal.remove();
   };

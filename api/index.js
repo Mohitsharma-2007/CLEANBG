@@ -58,6 +58,7 @@ var HistorySchema = new Schema(
     height: { type: Number, default: 0 },
     thumbnail: { type: String, default: "" },
     resultBase64: { type: String, required: true },
+    originalBase64: { type: String, default: null },
     settings: { type: Schema.Types.Mixed, default: {} }
   },
   {
@@ -835,6 +836,7 @@ router.get("/history", async (req, res) => {
       height: row.height,
       thumbnail: row.thumbnail,
       resultBase64: row.resultBase64,
+      originalBase64: row.originalBase64 || null,
       settings: row.settings,
       timestamp: new Date(row.createdAt).getTime()
     }));
@@ -858,6 +860,7 @@ router.post("/history", async (req, res) => {
       height,
       thumbnail,
       resultBase64,
+      originalBase64,
       settings
     } = req.body;
     if (!id || !name || !tool || !resultBase64) {
@@ -875,6 +878,7 @@ router.post("/history", async (req, res) => {
           height: height || 0,
           thumbnail: thumbnail || "",
           resultBase64,
+          originalBase64: originalBase64 || null,
           settings: settings || {}
         },
         $setOnInsert: {

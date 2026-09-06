@@ -75,6 +75,7 @@ export async function saveHistory(item: Omit<HistoryItem, 'id' | 'timestamp'> & 
   // Sync with MongoDB backend API if available
   try {
     const resultBase64 = await blobToBase64(item.resultBlob);
+    const originalBase64 = item.originalBlob ? await blobToBase64(item.originalBlob) : undefined;
     const token = (await import('../core/auth-state')).authState.getToken();
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -92,6 +93,7 @@ export async function saveHistory(item: Omit<HistoryItem, 'id' | 'timestamp'> & 
         height: item.height,
         thumbnail: persistentThumbnail,
         resultBase64,
+        originalBase64,
       }),
       signal: AbortSignal.timeout(4000),
     });
@@ -123,6 +125,7 @@ export async function fetchHistory(): Promise<{ items: HistoryItem[]; source: 'p
             }
           }
           const blob = base64ToBlob(row.resultBase64);
+          const origBlob = row.originalBase64 ? base64ToBlob(row.originalBase64) : undefined;
           return {
             id: row.id,
             name: row.name,
@@ -134,6 +137,7 @@ export async function fetchHistory(): Promise<{ items: HistoryItem[]; source: 'p
             thumbnail: thumb || (blob ? URL.createObjectURL(blob) : ''),
             timestamp: row.timestamp,
             resultBlob: blob,
+            originalBlob: origBlob,
           };
         });
         return { items, source: 'postgres' };
