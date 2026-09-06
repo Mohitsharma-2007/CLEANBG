@@ -240,7 +240,7 @@ class ClearBGApp {
     events.on('exportImage', () => this.exportResult());
     events.on('downloadImage', () => this.exportResult());
 
-    // Photo Editor Integration (Filerobot)
+    // Photo Editor Integration (Filerobot Full Studio)
     events.on('editor:launch', async () => {
       // Allow editing either the processed (bg-removed) image or the original
       const sourceData = this.processedImageData || this.rawBaseImageData;
@@ -270,21 +270,89 @@ class ClearBGApp {
         width: '100vw',
         height: '100vh',
         zIndex: '10000',
-        backgroundColor: '#0f172a',
+        backgroundColor: '#0b0f19',
+        display: 'flex',
+        flexDirection: 'column',
       });
+
+      // Top Navigation Bar with persistent Exit button
+      const topBar = document.createElement('header');
+      topBar.className = 'full-studio-header';
+      topBar.innerHTML = `
+        <div class="full-studio-left">
+          <div class="full-studio-logo">
+            <span class="full-studio-badge">PRO</span>
+            <span class="full-studio-title">CleanBG Full Studio</span>
+          </div>
+          <span class="full-studio-dim">${sourceData.width} × ${sourceData.height} px</span>
+        </div>
+        <div class="full-studio-center">
+          <span class="studio-kbd-hint"><kbd>ESC</kbd> or click button to exit anytime</span>
+        </div>
+        <div class="full-studio-right">
+          <button id="full-studio-exit-btn" class="btn-exit-full-studio" title="Exit Full Studio (Esc)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            <span>Exit Studio</span>
+            <kbd>Esc</kbd>
+          </button>
+        </div>
+      `;
+      container.appendChild(topBar);
+
+      // Filerobot Mount Area
+      const editorMount = document.createElement('div');
+      editorMount.id = 'filerobot-editor-mount';
+      Object.assign(editorMount.style, {
+        position: 'relative',
+        width: '100%',
+        height: 'calc(100vh - 54px)',
+        overflow: 'hidden',
+        background: '#090d16',
+      });
+      container.appendChild(editorMount);
+
       document.body.appendChild(container);
 
+      let isClosed = false;
+      let editorInstance: any = null;
+
+      const closeStudio = () => {
+        if (isClosed) return;
+        isClosed = true;
+        window.removeEventListener('keydown', handleKeyEsc, true);
+        try {
+          if (editorInstance && typeof editorInstance.terminate === 'function') {
+            editorInstance.terminate();
+          }
+        } catch (e) {}
+        container.remove();
+        events.emit('notify', {
+          type: 'info',
+          title: 'Full Studio Closed',
+          message: 'Returned to CleanBG workspace.',
+        });
+      };
+
+      const handleKeyEsc = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          e.stopPropagation();
+          closeStudio();
+        }
+      };
+      window.addEventListener('keydown', handleKeyEsc, true);
+
+      topBar.querySelector('#full-studio-exit-btn')?.addEventListener('click', () => {
+        closeStudio();
+      });
+
       try {
-        // Filerobot exports its constructor as default from the NPM package
         const filerobotModule = await import('filerobot-image-editor');
         const FilerobotImageEditor = filerobotModule.default || filerobotModule;
-
-        // Extract TABS and TOOLS constants
         const { TABS, TOOLS } = (FilerobotImageEditor as any);
 
         const config: any = {
           source: imgDataUrl,
-          // Enable all available tabs
           tabsIds: TABS ? [
             TABS.ADJUST,
             TABS.FINETUNE,
@@ -293,32 +361,27 @@ class ClearBGApp {
             TABS.ANNOTATE,
             TABS.WATERMARK,
           ].filter(Boolean) : [],
-          // Default selected tool
           defaultTabId: TABS?.ADJUST || 'Adjust',
           defaultToolId: TOOLS?.BRIGHTNESS || 'Brightness',
-          // Image quality settings
           savingPixelRatio: 4,
           previewPixelRatio: 2,
-          // Annotations common config
           annotationsCommon: {
-            fill: '#2563eb',
-            stroke: '#2563eb',
+            fill: '#3b82f6',
+            stroke: '#3b82f6',
             strokeWidth: 2,
             opacity: 1,
           },
-          // Text annotation defaults
           Text: {
             text: 'Text',
             fill: '#ffffff',
             fontSize: 24,
             fontFamily: 'Inter, sans-serif',
           },
-          // Save callback — receives the edited image
-          onSave: (editedImageObject: any, designState: any) => {
-            // editedImageObject.imageBase64 contains the full data URL
+          onSave: (editedImageObject: any) => {
             const dataUrl = editedImageObject.imageBase64;
             if (!dataUrl) {
               console.warn('[Filerobot] No imageBase64 in save result');
+              closeStudio();
               return;
             }
 
@@ -331,11 +394,9 @@ class ClearBGApp {
               ctx.drawImage(img, 0, 0);
               const editedData = ctx.getImageData(0, 0, c.width, c.height);
 
-              // Update whichever image we were editing
               if (this.processedImageData) {
                 this.processedImageData = editedData;
                 this.rawBaseImageData = editedData;
-                // Re-sync mask from alpha channel so manual brush and edge filters don't revert edits
                 this.currentMask = new Uint8ClampedArray(editedData.width * editedData.height);
                 for (let i = 0; i < this.currentMask.length; i++) {
                   this.currentMask[i] = editedData.data[i * 4 + 3];
@@ -349,38 +410,34 @@ class ClearBGApp {
               events.emit('notify', {
                 type: 'success',
                 title: 'Photo Edited',
-                message: 'Your edits have been applied successfully.',
+                message: 'Your edits have been applied to the workspace.',
               });
 
-              editor.terminate();
-              container.remove();
+              closeStudio();
             };
             img.onerror = () => {
               console.error('[Filerobot] Failed to load edited image');
-              editor.terminate();
-              container.remove();
+              closeStudio();
             };
             img.src = dataUrl;
           },
-          onClose: (closingReason: string) => {
-            editor.terminate();
-            container.remove();
+          onClose: () => {
+            closeStudio();
           },
-          // Dark theme matching the app
           theme: {
             palette: {
-              'bg-primary': '#0f172a',
+              'bg-primary': '#0b0f19',
               'bg-primary-hover': '#1e293b',
-              'bg-secondary': '#1e293b',
-              'bg-secondary-hover': '#334155',
-              'accent-primary': '#2563eb',
-              'accent-primary-hover': '#1d4ed8',
-              'icons-primary': '#e2e8f0',
+              'bg-secondary': '#111827',
+              'bg-secondary-hover': '#1f2937',
+              'accent-primary': '#3b82f6',
+              'accent-primary-hover': '#2563eb',
+              'icons-primary': '#f8fafc',
               'icons-secondary': '#94a3b8',
-              'borders-primary': '#334155',
-              'borders-secondary': '#1e293b',
-              'borders-strong': '#475569',
-              'light-shadow': 'rgba(0, 0, 0, 0.3)',
+              'borders-primary': '#1e293b',
+              'borders-secondary': '#0f172a',
+              'borders-strong': '#334155',
+              'light-shadow': 'rgba(0, 0, 0, 0.4)',
               'warning': '#f59e0b',
               'error': '#ef4444',
             },
@@ -390,18 +447,66 @@ class ClearBGApp {
           },
         };
 
-        const editor = new FilerobotImageEditor(container, config);
-        editor.render();
+        editorInstance = new FilerobotImageEditor(editorMount, config);
+        editorInstance.render();
 
       } catch (err: any) {
         console.error('[Photo Editor] Failed to initialize Filerobot:', err);
-        container.remove();
+        closeStudio();
         events.emit('notify', {
           type: 'error',
           title: 'Editor Error',
           message: 'Failed to open the photo editor. Please try again.',
         });
       }
+    });
+
+    // History Re-open in Studio listener
+    events.on('history:openInStudio', async (item: any) => {
+      if (!item || !item.resultBlob) return;
+      this.navigate('remove-bg');
+
+      const img = new Image();
+      const url = URL.createObjectURL(item.resultBlob);
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth || item.width;
+        canvas.height = img.naturalHeight || item.height;
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(img, 0, 0);
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+        const fileName = item.name.endsWith('.png') ? item.name : `${item.name}.png`;
+        const file = new File([item.resultBlob], fileName, { type: 'image/png' });
+        const imageFile = state.addImage(file, img);
+        state.set('currentImageId', imageFile.id);
+
+        this.rawBaseImageData = imgData;
+        this.originalImageData = imgData;
+        this.processedImageData = imgData;
+        this.currentMask = new Uint8ClampedArray(imgData.width * imgData.height);
+        for (let i = 0; i < this.currentMask.length; i++) {
+          this.currentMask[i] = imgData.data[i * 4 + 3];
+        }
+        this.baseAIMask = new Uint8ClampedArray(this.currentMask);
+
+        this.historyStack = [{ mask: new Uint8ClampedArray(this.currentMask), processed: this.cloneImageData(imgData) }];
+        this.historyPointer = 0;
+        updateUndoRedoButtons(false, false);
+
+        showModelLoading(false);
+        updateSidebarFileList();
+        this.refreshCanvasDisplay();
+        updateStats();
+
+        events.emit('notify', {
+          type: 'success',
+          title: 'Opened in Studio',
+          message: `"${item.name}" is now loaded and ready for editing!`,
+        });
+        URL.revokeObjectURL(url);
+      };
+      img.src = url;
     });
 
     // Photoshop Adjustments

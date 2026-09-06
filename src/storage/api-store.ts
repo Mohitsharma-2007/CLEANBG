@@ -52,15 +52,27 @@ function base64ToBlob(base64: string): Blob {
 }
 
 /**
- * Save History Item to PostgreSQL database (with automatic IndexedDB mirror)
+ * Save History Item to database (with automatic IndexedDB mirror)
  */
 export async function saveHistory(item: Omit<HistoryItem, 'id' | 'timestamp'> & { id?: string }): Promise<string> {
   const id = item.id || Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
-  // Always mirror to IndexedDB locally
-  await saveToLocalIDB({ ...item, id });
+  // Ensure thumbnail is a persistent Base64 Data URL, NOT an ephemeral blob: URL
+  let persistentThumbnail = item.thumbnail;
+  if (!persistentThumbnail || persistentThumbnail.startsWith('blob:') || persistentThumbnail.length < 30) {
+    try {
+      persistentThumbnail = await blobToBase64(item.resultBlob);
+    } catch {
+      persistentThumbnail = '';
+    }
+  }
 
-  // Sync with PostgreSQL backend API if available
+  const persistentItem = { ...item, id, thumbnail: persistentThumbnail };
+
+  // Always mirror to IndexedDB locally
+  await saveToLocalIDB(persistentItem);
+
+  // Sync with MongoDB backend API if available
   try {
     const resultBase64 = await blobToBase64(item.resultBlob);
     const token = (await import('../core/auth-state')).authState.getToken();
@@ -78,7 +90,7 @@ export async function saveHistory(item: Omit<HistoryItem, 'id' | 'timestamp'> & 
         resultSize: item.resultSize,
         width: item.width,
         height: item.height,
-        thumbnail: item.thumbnail,
+        thumbnail: persistentThumbnail,
         resultBase64,
       }),
       signal: AbortSignal.timeout(4000),
@@ -91,7 +103,7 @@ export async function saveHistory(item: Omit<HistoryItem, 'id' | 'timestamp'> & 
 }
 
 /**
- * Fetch history from PostgreSQL database (falls back to IndexedDB)
+ * Fetch history from MongoDB database (falls back to IndexedDB)
  */
 export async function fetchHistory(): Promise<{ items: HistoryItem[]; source: 'postgres' | 'indexeddb' }> {
   try {
@@ -103,18 +115,27 @@ export async function fetchHistory(): Promise<{ items: HistoryItem[]; source: 'p
     if (res.ok) {
       const data = await res.json();
       if (data.success && Array.isArray(data.data) && data.data.length > 0) {
-        const items: HistoryItem[] = data.data.map((row: any) => ({
-          id: row.id,
-          name: row.name,
-          tool: row.tool,
-          originalSize: row.originalSize,
-          resultSize: row.resultSize,
-          width: row.width,
-          height: row.height,
-          thumbnail: row.thumbnail,
-          timestamp: row.timestamp,
-          resultBlob: base64ToBlob(row.resultBase64),
-        }));
+        const items: HistoryItem[] = data.data.map((row: any) => {
+          let thumb = row.thumbnail;
+          if (!thumb || thumb.startsWith('blob:') || thumb.length < 30) {
+            if (row.resultBase64) {
+              thumb = row.resultBase64.startsWith('data:') ? row.resultBase64 : `data:image/png;base64,${row.resultBase64}`;
+            }
+          }
+          const blob = base64ToBlob(row.resultBase64);
+          return {
+            id: row.id,
+            name: row.name,
+            tool: row.tool,
+            originalSize: row.originalSize,
+            resultSize: row.resultSize,
+            width: row.width,
+            height: row.height,
+            thumbnail: thumb || (blob ? URL.createObjectURL(blob) : ''),
+            timestamp: row.timestamp,
+            resultBlob: blob,
+          };
+        });
         return { items, source: 'postgres' };
       }
     }
@@ -123,7 +144,17 @@ export async function fetchHistory(): Promise<{ items: HistoryItem[]; source: 'p
   }
 
   const localItems = await getFromLocalIDB();
-  return { items: localItems, source: 'indexeddb' };
+  // Ensure local items have fresh valid blob URLs if their thumbnail is an old dead blob
+  const sanitizedLocalItems = localItems.map(item => {
+    if (!item.thumbnail || item.thumbnail.startsWith('blob:') || item.thumbnail.length < 30) {
+      if (item.resultBlob) {
+        item.thumbnail = URL.createObjectURL(item.resultBlob);
+      }
+    }
+    return item;
+  });
+
+  return { items: sanitizedLocalItems, source: 'indexeddb' };
 }
 
 /**

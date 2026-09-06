@@ -1862,3 +1862,310 @@
 .back-link:hover {
   color: var(--color-text);
 }
+
+/* ==========================================================================
+   History Cards & Lightbox Modal Enhancements
+   ========================================================================== */
+.history-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+}
+
+.history-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  border-color: var(--color-primary);
+}
+
+.history-thumb-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4/3;
+  overflow: hidden;
+  cursor: pointer;
+  background: #1e293b;
+}
+
+.history-card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: transform var(--transition-fast);
+}
+
+.history-thumb-wrapper:hover .history-card-image {
+  transform: scale(1.04);
+}
+
+.history-card-hover-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+  pointer-events: none;
+}
+
+.history-thumb-wrapper:hover .history-card-hover-overlay {
+  opacity: 1;
+}
+
+.hover-btn-text {
+  background: var(--color-primary);
+  color: white;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+}
+
+.history-badge-res {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(15, 23, 42, 0.8);
+  color: #e2e8f0;
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 2px 6px;
+  border-radius: 4px;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* History Lightbox Modal */
+.history-lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 15, 29, 0.85);
+  backdrop-filter: blur(8px);
+  z-index: 10500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.history-lightbox-dialog {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  max-width: 900px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.history-lightbox-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg);
+}
+
+.history-lightbox-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.history-lightbox-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.history-lightbox-close {
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.history-lightbox-close:hover {
+  background: var(--color-border);
+  color: var(--color-text);
+}
+
+.history-lightbox-body {
+  flex: 1;
+  min-height: 300px;
+  max-height: calc(90vh - 140px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow: auto;
+  background: #0f172a;
+}
+
+.history-lightbox-img {
+  max-width: 100%;
+  max-height: calc(90vh - 180px);
+  object-fit: contain;
+  border-radius: var(--radius-md);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+}
+
+.history-lightbox-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-bg);
+}
+
+.history-lightbox-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
+
+.history-lightbox-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* ==========================================================================
+   Full Studio (Photoshop Suite) Header & Exit Controls
+   ========================================================================== */
+.full-studio-header {
+  height: 54px;
+  width: 100%;
+  background: #0b0f19;
+  border-bottom: 1px solid #1e293b;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10005;
+  color: #f8fafc;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+}
+
+.full-studio-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.full-studio-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.full-studio-badge {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+}
+
+.full-studio-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.full-studio-dim {
+  background: #1e293b;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid #334155;
+}
+
+.full-studio-center {
+  display: flex;
+  align-items: center;
+}
+
+.studio-kbd-hint {
+  font-size: 0.75rem;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.studio-kbd-hint kbd {
+  background: #1e293b;
+  color: #cbd5e1;
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid #334155;
+  font-size: 0.7rem;
+}
+
+.full-studio-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-exit-full-studio {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #1e293b;
+  color: #f8fafc;
+  border: 1px solid #334155;
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-exit-full-studio:hover {
+  background: #dc2626;
+  border-color: #ef4444;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+}
+
+.btn-exit-full-studio kbd {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 0.7rem;
+}
