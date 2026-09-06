@@ -4,7 +4,7 @@ import cors from "cors";
 import dotenv3 from "dotenv";
 
 // server/routes.ts
-import { Router as Router2 } from "express";
+import { Router as Router3 } from "express";
 
 // server/db.ts
 import mongoose from "mongoose";
@@ -630,9 +630,168 @@ authRouter.get("/me", requireAuthMiddleware, async (req, res) => {
   }
 });
 
+// server/routes/process.ts
+import { Router as Router2 } from "express";
+
+// server/services/background-remover.ts
+import { AutoModel, AutoProcessor, RawImage, env } from "@huggingface/transformers";
+import sharp from "sharp";
+import path2 from "path";
+import fs2 from "fs";
+var CACHE_DIR = process.env.VERCEL ? "/tmp/huggingface" : path2.join(process.cwd(), ".cache", "huggingface");
+env.cacheDir = CACHE_DIR;
+env.allowLocalModels = false;
+var MODEL_ID = "briaai/RMBG-1.4";
+var modelInstance = null;
+var processorInstance = null;
+var isInitializing = false;
+var initPromise = null;
+async function getServerModelAndProcessor() {
+  if (modelInstance && processorInstance) {
+    return { model: modelInstance, processor: processorInstance };
+  }
+  if (isInitializing && initPromise) {
+    return await initPromise;
+  }
+  isInitializing = true;
+  initPromise = (async () => {
+    try {
+      console.log(`[AI Server] Loading RMBG-1.4 neural network into ${CACHE_DIR}...`);
+      const t0 = Date.now();
+      try {
+        if (!fs2.existsSync(CACHE_DIR)) {
+          fs2.mkdirSync(CACHE_DIR, { recursive: true });
+        }
+      } catch (e) {
+      }
+      processorInstance = await AutoProcessor.from_pretrained(MODEL_ID, {
+        config: {
+          do_normalize: true,
+          do_pad: false,
+          do_rescale: true,
+          do_resize: true,
+          image_mean: [0.5, 0.5, 0.5],
+          feature_extractor_type: "ImageFeatureExtractor",
+          image_std: [1, 1, 1],
+          resample: 2,
+          rescale_factor: 0.00392156862745098,
+          size: { width: 1024, height: 1024 }
+        }
+      });
+      modelInstance = await AutoModel.from_pretrained(MODEL_ID, {
+        config: { model_type: "custom" },
+        dtype: "q8"
+      });
+      console.log(`[AI Server] RMBG-1.4 model & processor loaded successfully in ${Date.now() - t0}ms!`);
+      return { model: modelInstance, processor: processorInstance };
+    } catch (err) {
+      console.error("[AI Server] Failed to load RMBG-1.4 on server:", err);
+      modelInstance = null;
+      processorInstance = null;
+      throw err;
+    } finally {
+      isInitializing = false;
+    }
+  })();
+  return await initPromise;
+}
+async function removeBackgroundServer(imageInput) {
+  const t0 = Date.now();
+  let inputBuffer;
+  if (Buffer.isBuffer(imageInput)) {
+    inputBuffer = imageInput;
+  } else if (typeof imageInput === "string") {
+    const base64Clean = imageInput.replace(/^data:image\/\w+;base64,/, "");
+    inputBuffer = Buffer.from(base64Clean, "base64");
+  } else {
+    throw new Error("Invalid image input format. Expected base64 string or Buffer.");
+  }
+  const sharpImg = sharp(inputBuffer);
+  const meta = await sharpImg.metadata();
+  const width = meta.width;
+  const height = meta.height;
+  if (!width || !height) {
+    throw new Error("Unable to determine image dimensions");
+  }
+  const { model, processor } = await getServerModelAndProcessor();
+  const blob = new Blob([inputBuffer]);
+  const rawImg = await RawImage.fromBlob(blob);
+  const { pixel_values } = await processor(rawImg);
+  const { output } = await model({ input: pixel_values });
+  const maskTensor = output[0].mul(255).to("uint8");
+  const mask1024Buf = Buffer.from(maskTensor.data);
+  const resizedMaskBuf = await sharp(mask1024Buf, {
+    raw: { width: 1024, height: 1024, channels: 1 }
+  }).resize(width, height, { kernel: "lanczos3" }).raw().toBuffer();
+  const rgbBuffer = await sharp(inputBuffer).removeAlpha().toBuffer();
+  const pngCutoutBuffer = await sharp(rgbBuffer).joinChannel(resizedMaskBuf, {
+    raw: { width, height, channels: 1 }
+  }).png({ compressionLevel: 8 }).toBuffer();
+  const durationMs = Date.now() - t0;
+  const cutoutDataUrl = `data:image/png;base64,${pngCutoutBuffer.toString("base64")}`;
+  return {
+    success: true,
+    cutoutDataUrl,
+    width,
+    height,
+    originalSize: inputBuffer.length,
+    processedSize: pngCutoutBuffer.length,
+    durationMs,
+    engine: "RMBG-1.4 (Server-Side)"
+  };
+}
+
+// server/routes/process.ts
+var processRouter = Router2();
+processRouter.post("/remove-bg", async (req, res) => {
+  try {
+    const { image, imageBase64 } = req.body;
+    const input = image || imageBase64;
+    if (!input) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required field: "image" or "imageBase64" (base64 string or data URL).'
+      });
+    }
+    const result = await removeBackgroundServer(input);
+    res.json(result);
+  } catch (err) {
+    console.error("[Process Route] Error removing background on server:", err);
+    res.status(500).json({
+      success: false,
+      error: err.message || "Server-side background removal failed."
+    });
+  }
+});
+processRouter.post("/preload", async (req, res) => {
+  try {
+    const t0 = Date.now();
+    await getServerModelAndProcessor();
+    res.json({
+      success: true,
+      message: "RMBG-1.4 model is loaded and ready on server.",
+      durationMs: Date.now() - t0
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: err.message || "Failed to preload model."
+    });
+  }
+});
+processRouter.get("/status", (req, res) => {
+  res.json({
+    status: "ok",
+    engine: "RMBG-1.4 Neural Network",
+    platform: process.env.VERCEL ? "Vercel Serverless" : "Node.js Local Server",
+    maxInputSize: "50MB"
+  });
+});
+
 // server/routes.ts
-var router = Router2();
+var router = Router3();
 router.use("/auth", authRouter);
+router.use("/process", processRouter);
 router.use(optionalAuthMiddleware);
 router.get("/health", async (req, res) => {
   try {

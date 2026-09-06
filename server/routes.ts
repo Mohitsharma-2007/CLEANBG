@@ -10,12 +10,16 @@ import { Router, Request, Response } from 'express';
 import { connectToDatabase, mongoose } from './db';
 import { History } from './models/History';
 import { authRouter } from './routes/auth';
+import { processRouter } from './routes/process';
 import { optionalAuthMiddleware, AuthenticatedRequest } from './services/auth';
 
 export const router = Router();
 
 // Mount Auth Sub-router
 router.use('/auth', authRouter);
+
+// Mount Image Processing Sub-router (Server-side RMBG-1.4)
+router.use('/process', processRouter);
 
 // Apply optional auth to all API routes
 router.use(optionalAuthMiddleware);
