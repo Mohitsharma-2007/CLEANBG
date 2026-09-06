@@ -1,0 +1,96 @@
+# ==============================================================================
+# ClearBG AI Studio - .gitignore
+# Copyright (c) 2026 Mohit Chadha. All Rights Reserved.
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. Environment & Sensitive Secrets (CRITICAL - NEVER COMMIT)
+# ------------------------------------------------------------------------------
+.env
+.env.*
+*.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+!.env.example
+*.pem
+*.key
+*.cert
+credentials.json
+
+# ------------------------------------------------------------------------------
+# 2. Dependencies
+# ------------------------------------------------------------------------------
+node_modules/
+jspm_packages/
+.pnp
+.pnp.js
+
+# ------------------------------------------------------------------------------
+# 3. Build Outputs & Compilations
+# ------------------------------------------------------------------------------
+dist/
+dist-ssr/
+build/
+out/
+.vite/
+*.tsbuildinfo
+
+# ------------------------------------------------------------------------------
+# 4. Logs & Debugging
+# ------------------------------------------------------------------------------
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+install_log.txt
+
+# ------------------------------------------------------------------------------
+# 5. Temporary, Cache & User Storage
+# ------------------------------------------------------------------------------
+temp/
+output/
+.tempmediaStorage/
+.user_uploaded/
+models/
+.cache/
+*.tmp
+
+# ------------------------------------------------------------------------------
+# 6. Test Photos & Scratch Assets (Keep repo lean and clean)
+# ------------------------------------------------------------------------------
+TESTPHOTO1.jpg
+TESTPHOTO2.jpeg
+CleanBG.png
+
+# ------------------------------------------------------------------------------
+# 7. Editor & OS Artifacts
+# ------------------------------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+[Dd]esktop.ini
+
+# IDE & Editor folders
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.sublime-workspace
+*.sublime-project
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Vercel deployment cache
+.vercel
