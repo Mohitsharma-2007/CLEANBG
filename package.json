@@ -39,6 +39,7 @@
     "filerobot-image-editor": "^5.0.0-beta.159",
     "jsonwebtoken": "^9.0.3",
     "lucide": "^1.38.0",
+    "mongoose": "^9.9.5",
     "morphicons": "^1.7.1",
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^9.1.0",

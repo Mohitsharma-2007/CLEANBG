@@ -2,7 +2,8 @@ import dotenv from 'dotenv';
 import nodemailer from 'nodemailer';
 import path from 'path';
 import fs from 'fs';
-import { pool } from '../db';
+import { connectToDatabase } from '../db';
+import { OtpCode } from '../models/OtpCode';
 
 dotenv.config();
 
@@ -206,11 +207,14 @@ export async function saveOtpToDatabase(
 ): Promise<void> {
   const expiresAt = new Date(Date.now() + expiryMinutes * 60 * 1000);
   try {
-    await pool.query(
-      `INSERT INTO otp_codes (email, otp_code, type, expires_at)
-       VALUES ($1, $2, $3, $4)`,
-      [email.toLowerCase().trim(), otpCode, type, expiresAt]
-    );
+    await connectToDatabase();
+    await OtpCode.create({
+      email: email.toLowerCase().trim(),
+      otpCode,
+      type,
+      expiresAt,
+      isUsed: false,
+    });
   } catch (err: any) {
     console.warn('[OTP Store Warning]:', err.message);
   }
@@ -225,21 +229,18 @@ export async function verifyOtpFromDatabase(
   type: 'signup' | 'login' | 'reset_password'
 ): Promise<boolean> {
   try {
-    const result = await pool.query(
-      `SELECT id FROM otp_codes 
-       WHERE email = $1 
-         AND otp_code = $2 
-         AND type = $3 
-         AND is_used = FALSE 
-         AND expires_at > NOW()
-       ORDER BY created_at DESC 
-       LIMIT 1`,
-      [email.toLowerCase().trim(), otpCode.trim(), type]
-    );
+    await connectToDatabase();
+    const otp = await OtpCode.findOne({
+      email: email.toLowerCase().trim(),
+      otpCode: otpCode.trim(),
+      type,
+      isUsed: false,
+      expiresAt: { $gt: new Date() },
+    }).sort({ createdAt: -1 });
 
-    if (result.rowCount && result.rowCount > 0) {
-      const otpId = result.rows[0].id;
-      await pool.query(`UPDATE otp_codes SET is_used = TRUE WHERE id = $1`, [otpId]);
+    if (otp) {
+      otp.isUsed = true;
+      await otp.save();
       return true;
     }
     return false;

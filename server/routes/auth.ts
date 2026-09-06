@@ -1,5 +1,15 @@
+/**
+ * ClearBG AI Studio - Auth Routes (MongoDB Atlas)
+ * Copyright (c) 2026 Mohit Sharma. All Rights Reserved.
+ * Author: Mohit Sharma (grnoida.mohitsharma2007@gmail.com)
+ *
+ * PROPRIETARY AND CONFIDENTIAL
+ */
+
 import { Router, Request, Response } from 'express';
-import { pool } from '../db';
+import { connectToDatabase } from '../db';
+import { User } from '../models/User';
+import { History } from '../models/History';
 import { generateOtpCode, sendOtpEmail, verifyOtpFromDatabase } from '../services/email';
 import { hashPassword, comparePassword, generateToken, requireAuthMiddleware, AuthenticatedRequest } from '../services/auth';
 
@@ -10,6 +20,7 @@ export const authRouter = Router();
  */
 authRouter.post('/send-otp', async (req: Request, res: Response) => {
   try {
+    await connectToDatabase();
     const { email, name, type } = req.body;
     if (!email) {
       return res.status(400).json({ success: false, error: 'Email address is required' });
@@ -20,16 +31,16 @@ authRouter.post('/send-otp', async (req: Request, res: Response) => {
 
     // If signup, check if email already exists
     if (otpType === 'signup') {
-      const existing = await pool.query('SELECT id FROM users WHERE email = $1', [normalizedEmail]);
-      if (existing.rowCount && existing.rowCount > 0) {
+      const existing = await User.findOne({ email: normalizedEmail });
+      if (existing) {
         return res.status(400).json({ success: false, error: 'An account with this email already exists. Please log in.' });
       }
     }
 
     // If reset_password, check if email exists
     if (otpType === 'reset_password') {
-      const existing = await pool.query('SELECT id FROM users WHERE email = $1', [normalizedEmail]);
-      if (!existing.rowCount || existing.rowCount === 0) {
+      const existing = await User.findOne({ email: normalizedEmail });
+      if (!existing) {
         return res.status(404).json({ success: false, error: 'No account found with this email address.' });
       }
     }
@@ -53,6 +64,7 @@ authRouter.post('/send-otp', async (req: Request, res: Response) => {
  */
 authRouter.post('/verify-otp', async (req: Request, res: Response) => {
   try {
+    await connectToDatabase();
     const { email, otpCode, type } = req.body;
     if (!email || !otpCode) {
       return res.status(400).json({ success: false, error: 'Email and OTP code are required' });
@@ -74,6 +86,7 @@ authRouter.post('/verify-otp', async (req: Request, res: Response) => {
  */
 authRouter.post('/signup', async (req: Request, res: Response) => {
   try {
+    await connectToDatabase();
     const { email, name, password, otpCode } = req.body;
     if (!email || !name || !password) {
       return res.status(400).json({ success: false, error: 'Name, email, and password are required' });
@@ -90,21 +103,23 @@ authRouter.post('/signup', async (req: Request, res: Response) => {
     }
 
     // Check existing
-    const existing = await pool.query('SELECT id FROM users WHERE email = $1', [normalizedEmail]);
-    if (existing.rowCount && existing.rowCount > 0) {
+    const existing = await User.findOne({ email: normalizedEmail });
+    if (existing) {
       return res.status(400).json({ success: false, error: 'Account already exists with this email.' });
     }
 
     const passwordHash = await hashPassword(password);
     const userId = 'usr_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
-    await pool.query(
-      `INSERT INTO users (id, email, name, password_hash, last_login_at)
-       VALUES ($1, $2, $3, $4, NOW())`,
-      [userId, normalizedEmail, name.trim(), passwordHash]
-    );
+    const newUser = await User.create({
+      id: userId,
+      email: normalizedEmail,
+      name: name.trim(),
+      passwordHash,
+      lastLoginAt: new Date(),
+    });
 
-    const userPayload = { id: userId, email: normalizedEmail, name: name.trim() };
+    const userPayload = { id: newUser.id, email: newUser.email, name: newUser.name };
     const token = generateToken(userPayload);
 
     res.status(201).json({
@@ -124,22 +139,18 @@ authRouter.post('/signup', async (req: Request, res: Response) => {
  */
 authRouter.post('/login', async (req: Request, res: Response) => {
   try {
+    await connectToDatabase();
     const { email, password, otpCode } = req.body;
     if (!email) {
       return res.status(400).json({ success: false, error: 'Email is required' });
     }
 
     const normalizedEmail = email.toLowerCase().trim();
-    const result = await pool.query(
-      'SELECT id, email, name, password_hash, avatar_url FROM users WHERE email = $1',
-      [normalizedEmail]
-    );
+    const user = await User.findOne({ email: normalizedEmail });
 
-    if (!result.rowCount || result.rowCount === 0) {
+    if (!user) {
       return res.status(404).json({ success: false, error: 'No account found with this email.' });
     }
-
-    const user = result.rows[0];
 
     // Case A: Login with OTP
     if (otpCode) {
@@ -150,7 +161,7 @@ authRouter.post('/login', async (req: Request, res: Response) => {
     }
     // Case B: Login with Password
     else if (password) {
-      const isMatch = await comparePassword(password, user.password_hash);
+      const isMatch = await comparePassword(password, user.passwordHash || '');
       if (!isMatch) {
         return res.status(401).json({ success: false, error: 'Incorrect password.' });
       }
@@ -159,9 +170,10 @@ authRouter.post('/login', async (req: Request, res: Response) => {
     }
 
     // Update last_login_at
-    await pool.query('UPDATE users SET last_login_at = NOW() WHERE id = $1', [user.id]);
+    user.lastLoginAt = new Date();
+    await user.save();
 
-    const userPayload = { id: user.id, email: user.email, name: user.name, avatarUrl: user.avatar_url };
+    const userPayload = { id: user.id, email: user.email, name: user.name, avatarUrl: user.avatarUrl };
     const token = generateToken(userPayload);
 
     res.json({
@@ -181,24 +193,25 @@ authRouter.post('/login', async (req: Request, res: Response) => {
  */
 authRouter.post('/forgot-password', async (req: Request, res: Response) => {
   try {
+    await connectToDatabase();
     const { email } = req.body;
     if (!email) {
       return res.status(400).json({ success: false, error: 'Email is required' });
     }
 
     const normalizedEmail = email.toLowerCase().trim();
-    const existing = await pool.query('SELECT id, name FROM users WHERE email = $1', [normalizedEmail]);
-    if (!existing.rowCount || existing.rowCount === 0) {
+    const existing = await User.findOne({ email: normalizedEmail });
+    if (!existing) {
       return res.status(404).json({ success: false, error: 'No account found with this email.' });
     }
 
     const otpCode = generateOtpCode();
-    const result = await sendOtpEmail(normalizedEmail, otpCode, 'reset_password', existing.rows[0].name);
+    const result = await sendOtpEmail(normalizedEmail, otpCode, 'reset_password', existing.name);
 
     res.json({
       success: true,
       message: `Password reset code sent to ${normalizedEmail}`,
-      devOtp: result.devOtp,
+      ...(process.env.NODE_ENV !== 'production' ? { devOtp: result.devOtp } : {}),
     });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
@@ -210,6 +223,7 @@ authRouter.post('/forgot-password', async (req: Request, res: Response) => {
  */
 authRouter.post('/reset-password', async (req: Request, res: Response) => {
   try {
+    await connectToDatabase();
     const { email, otpCode, newPassword } = req.body;
     if (!email || !otpCode || !newPassword) {
       return res.status(400).json({ success: false, error: 'Email, OTP code, and new password are required' });
@@ -222,9 +236,9 @@ authRouter.post('/reset-password', async (req: Request, res: Response) => {
     }
 
     const passwordHash = await hashPassword(newPassword);
-    await pool.query(
-      'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE email = $2',
-      [passwordHash, normalizedEmail]
+    await User.findOneAndUpdate(
+      { email: normalizedEmail },
+      { passwordHash, updatedAt: new Date() }
     );
 
     res.json({ success: true, message: 'Password reset successfully! You can now log in.' });
@@ -238,6 +252,7 @@ authRouter.post('/reset-password', async (req: Request, res: Response) => {
  */
 authRouter.put('/profile', requireAuthMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   try {
+    await connectToDatabase();
     const userId = req.user!.id;
     const { name, avatarUrl } = req.body;
 
@@ -245,10 +260,12 @@ authRouter.put('/profile', requireAuthMiddleware, async (req: AuthenticatedReque
       return res.status(400).json({ success: false, error: 'Name is required' });
     }
 
-    await pool.query(
-      'UPDATE users SET name = $1, avatar_url = COALESCE($2, avatar_url), updated_at = NOW() WHERE id = $3',
-      [name.trim(), avatarUrl || null, userId]
-    );
+    const updateFields: any = { name: name.trim(), updatedAt: new Date() };
+    if (avatarUrl !== undefined) {
+      updateFields.avatarUrl = avatarUrl;
+    }
+
+    await User.findOneAndUpdate({ id: userId }, updateFields);
 
     res.json({ success: true, message: 'Profile updated successfully!' });
   } catch (err: any) {
@@ -261,24 +278,22 @@ authRouter.put('/profile', requireAuthMiddleware, async (req: AuthenticatedReque
  */
 authRouter.get('/me', requireAuthMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   try {
+    await connectToDatabase();
     const userId = req.user!.id;
-    const userResult = await pool.query(
-      'SELECT id, email, name, avatar_url, last_login_at, created_at FROM users WHERE id = $1',
-      [userId]
-    );
+    const user = await User.findOne({ id: userId });
 
-    if (!userResult.rowCount || userResult.rowCount === 0) {
+    if (!user) {
       return res.status(404).json({ success: false, error: 'User not found' });
     }
 
-    const user = userResult.rows[0];
+    // Compute user image statistics from History collection
+    const historyCount = await History.countDocuments({ userId });
+    const historyAgg = await History.aggregate([
+      { $match: { userId } },
+      { $group: { _id: null, totalBytes: { $sum: '$resultSize' } } },
+    ]);
 
-    // Compute user image statistics
-    const statsResult = await pool.query(
-      `SELECT COUNT(*) as total_images, COALESCE(SUM(result_size), 0) as total_bytes 
-       FROM history WHERE user_id = $1`,
-      [userId]
-    );
+    const totalBytes = historyAgg.length > 0 ? historyAgg[0].totalBytes : 0;
 
     res.json({
       success: true,
@@ -286,14 +301,14 @@ authRouter.get('/me', requireAuthMiddleware, async (req: AuthenticatedRequest, r
         id: user.id,
         email: user.email,
         name: user.name,
-        avatarUrl: user.avatar_url,
-        createdAt: user.created_at,
-        lastLoginAt: user.last_login_at,
+        avatarUrl: user.avatarUrl,
+        createdAt: user.createdAt,
+        lastLoginAt: user.lastLoginAt,
         stats: {
-          totalImages: parseInt(statsResult.rows[0].total_images || '0'),
-          totalBytes: parseInt(statsResult.rows[0].total_bytes || '0'),
-        }
-      }
+          totalImages: historyCount,
+          totalBytes,
+        },
+      },
     });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });

@@ -1,5 +1,14 @@
+/**
+ * ClearBG AI Studio - Main API Routes (MongoDB Atlas)
+ * Copyright (c) 2026 Mohit Sharma. All Rights Reserved.
+ * Author: Mohit Sharma (grnoida.mohitsharma2007@gmail.com)
+ *
+ * PROPRIETARY AND CONFIDENTIAL
+ */
+
 import { Router, Request, Response } from 'express';
-import { pool } from './db';
+import { connectToDatabase, mongoose } from './db';
+import { History } from './models/History';
 import { authRouter } from './routes/auth';
 import { optionalAuthMiddleware, AuthenticatedRequest } from './services/auth';
 
@@ -14,17 +23,23 @@ router.use(optionalAuthMiddleware);
 // Health Check
 router.get('/health', async (req: Request, res: Response) => {
   try {
-    const result = await pool.query('SELECT NOW() as now, current_database() as db');
+    await connectToDatabase();
+    const state = mongoose.connection.readyState;
+    const isConnected = state === 1;
+
     res.json({
-      status: 'ok',
-      database: 'connected',
-      currentDb: result.rows[0].db,
-      serverTime: result.rows[0].now,
+      status: isConnected ? 'ok' : 'connecting',
+      database: isConnected ? 'connected' : 'disconnected',
+      engine: 'MongoDB Atlas',
+      cluster: mongoose.connection.host || 'remote',
+      currentDb: mongoose.connection.name || 'cleanbg',
+      serverTime: new Date().toISOString(),
     });
   } catch (err: any) {
     res.status(503).json({
       status: 'degraded',
       database: 'disconnected',
+      engine: 'MongoDB Atlas',
       error: err.message,
     });
   }
@@ -33,35 +48,29 @@ router.get('/health', async (req: Request, res: Response) => {
 // GET all history items (Filtered by user_id if logged in, or recent session)
 router.get('/history', async (req: AuthenticatedRequest, res: Response) => {
   try {
+    await connectToDatabase();
     const userId = req.user?.id;
-    let query = `
-      SELECT id, user_id, name, tool, original_size, result_size, width, height, thumbnail, result_base64, settings, created_at 
-      FROM history 
-    `;
-    const params: any[] = [];
+    const filter: any = {};
 
     if (userId) {
-      query += ` WHERE user_id = $1 `;
-      params.push(userId);
+      filter.userId = userId;
     }
 
-    query += ` ORDER BY created_at DESC LIMIT 100`;
+    const docs = await History.find(filter).sort({ createdAt: -1 }).limit(100);
 
-    const result = await pool.query(query, params);
-
-    const items = result.rows.map(row => ({
+    const items = docs.map((row) => ({
       id: row.id,
-      userId: row.user_id,
+      userId: row.userId,
       name: row.name,
       tool: row.tool,
-      originalSize: row.original_size,
-      resultSize: row.result_size,
+      originalSize: row.originalSize,
+      resultSize: row.resultSize,
       width: row.width,
       height: row.height,
       thumbnail: row.thumbnail,
-      resultBase64: row.result_base64,
+      resultBase64: row.resultBase64,
       settings: row.settings,
-      timestamp: new Date(row.created_at).getTime(),
+      timestamp: new Date(row.createdAt).getTime(),
     }));
 
     res.json({ success: true, count: items.length, data: items, userId: userId || 'guest' });
@@ -74,6 +83,7 @@ router.get('/history', async (req: AuthenticatedRequest, res: Response) => {
 // POST save history item (Associated with user_id if logged in)
 router.post('/history', async (req: AuthenticatedRequest, res: Response) => {
   try {
+    await connectToDatabase();
     const userId = req.user?.id || null;
     const {
       id,
@@ -85,46 +95,40 @@ router.post('/history', async (req: AuthenticatedRequest, res: Response) => {
       height,
       thumbnail,
       resultBase64,
-      settings
+      settings,
     } = req.body;
 
     if (!id || !name || !tool || !resultBase64) {
       return res.status(400).json({ success: false, error: 'Missing required fields' });
     }
 
-    const query = `
-      INSERT INTO history (id, user_id, name, tool, original_size, result_size, width, height, thumbnail, result_base64, settings)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-      ON CONFLICT (id) DO UPDATE SET
-        user_id = COALESCE(EXCLUDED.user_id, history.user_id),
-        name = EXCLUDED.name,
-        result_size = EXCLUDED.result_size,
-        thumbnail = EXCLUDED.thumbnail,
-        result_base64 = EXCLUDED.result_base64,
-        settings = EXCLUDED.settings
-      RETURNING id, user_id, created_at;
-    `;
+    const updated = await History.findOneAndUpdate(
+      { id },
+      {
+        $set: {
+          name,
+          tool,
+          originalSize: originalSize || 0,
+          resultSize: resultSize || 0,
+          width: width || 0,
+          height: height || 0,
+          thumbnail: thumbnail || '',
+          resultBase64,
+          settings: settings || {},
+        },
+        $setOnInsert: {
+          id,
+          userId,
+        },
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
 
-    const values = [
-      id,
-      userId,
-      name,
-      tool,
-      originalSize || 0,
-      resultSize || 0,
-      width || 0,
-      height || 0,
-      thumbnail || '',
-      resultBase64,
-      JSON.stringify(settings || {})
-    ];
-
-    const result = await pool.query(query, values);
     res.status(201).json({
       success: true,
-      id: result.rows[0].id,
-      userId: result.rows[0].user_id,
-      createdAt: result.rows[0].created_at
+      id: updated.id,
+      userId: updated.userId,
+      createdAt: updated.createdAt,
     });
   } catch (err: any) {
     console.error('Error saving history item:', err);
@@ -135,15 +139,16 @@ router.post('/history', async (req: AuthenticatedRequest, res: Response) => {
 // DELETE single history item
 router.delete('/history/:id', async (req: AuthenticatedRequest, res: Response) => {
   try {
+    await connectToDatabase();
     const { id } = req.params;
     const userId = req.user?.id;
 
+    const query: any = { id };
     if (userId) {
-      await pool.query('DELETE FROM history WHERE id = $1 AND (user_id = $2 OR user_id IS NULL)', [id, userId]);
-    } else {
-      await pool.query('DELETE FROM history WHERE id = $1', [id]);
+      query.$or = [{ userId }, { userId: null }];
     }
 
+    await History.deleteOne(query);
     res.json({ success: true, message: `Deleted item ${id}` });
   } catch (err: any) {
     console.error('Error deleting history item:', err);
@@ -154,11 +159,12 @@ router.delete('/history/:id', async (req: AuthenticatedRequest, res: Response) =
 // DELETE all history
 router.delete('/history', async (req: AuthenticatedRequest, res: Response) => {
   try {
+    await connectToDatabase();
     const userId = req.user?.id;
     if (userId) {
-      await pool.query('DELETE FROM history WHERE user_id = $1', [userId]);
+      await History.deleteMany({ userId });
     } else {
-      await pool.query('DELETE FROM history WHERE user_id IS NULL');
+      await History.deleteMany({ userId: null });
     }
     res.json({ success: true, message: 'History cleared' });
   } catch (err: any) {

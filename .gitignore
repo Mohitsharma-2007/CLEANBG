@@ -56,7 +56,7 @@ temp/
 output/
 .tempmediaStorage/
 .user_uploaded/
-models/
+/models/
 .cache/
 *.tmp
 
