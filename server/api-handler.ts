@@ -8,10 +8,10 @@
  * or any portion thereof, via any medium, is strictly prohibited.
  */
 
-import express, { Request, Response } from 'express';
+import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { router } from '../server/routes';
+import { router } from './routes';
 
 dotenv.config();
 

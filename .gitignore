@@ -1,7 +1,9 @@
 # ==============================================================================
 # ClearBG AI Studio - .gitignore
-# Copyright (c) 2026 Mohit Chadha. All Rights Reserved.
+# Copyright (c) 2026 Mohit Sharma. All Rights Reserved.
 # ==============================================================================
+scratch/
+
 
 # ------------------------------------------------------------------------------
 # 1. Environment & Sensitive Secrets (CRITICAL - NEVER COMMIT)
@@ -94,3 +96,6 @@ Thumbs.db
 
 # Vercel deployment cache
 .vercel
+
+.vercel
+.env*
