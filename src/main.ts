@@ -260,7 +260,7 @@ class ClearBGApp {
       srcCanvas.getContext('2d')!.putImageData(sourceData, 0, 0);
       const imgDataUrl = srcCanvas.toDataURL('image/png');
 
-      // Create fullscreen container overlay
+      // Create fullscreen container overlay in Light Theme
       const container = document.createElement('div');
       container.id = 'filerobot-container';
       Object.assign(container.style, {
@@ -270,44 +270,62 @@ class ClearBGApp {
         width: '100vw',
         height: '100vh',
         zIndex: '10000',
-        backgroundColor: '#0b0f19',
+        backgroundColor: '#F8FAFC',
         display: 'flex',
         flexDirection: 'column',
       });
 
-      // Top Navigation Bar with persistent Exit button
+      // Top Navigation Bar with branding, dimension, Apply and Exit buttons
       const topBar = document.createElement('header');
       topBar.className = 'full-studio-header';
       topBar.innerHTML = `
         <div class="full-studio-left">
-          <div class="full-studio-logo">
+          <div class="full-studio-brand">
+            <div class="full-studio-logo-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                <path d="M2 17l10 5 10-5"></path>
+                <path d="M2 12l10 5 10-5"></path>
+              </svg>
+            </div>
+            <span class="full-studio-title">CleanBG Studio</span>
             <span class="full-studio-badge">PRO</span>
-            <span class="full-studio-title">CleanBG Full Studio</span>
           </div>
-          <span class="full-studio-dim">${sourceData.width} × ${sourceData.height} px</span>
+          <span class="full-studio-dim" title="Source resolution">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+            ${sourceData.width} × ${sourceData.height} px
+          </span>
         </div>
         <div class="full-studio-center">
-          <span class="studio-kbd-hint"><kbd>ESC</kbd> or click button to exit anytime</span>
+          <span class="studio-kbd-hint">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+            Press <kbd>Esc</kbd> anytime to exit · Edits sync directly to workspace
+          </span>
         </div>
         <div class="full-studio-right">
-          <button id="full-studio-exit-btn" class="btn-exit-full-studio" title="Exit Full Studio (Esc)">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-            <span>Exit Studio</span>
+          <button id="full-studio-apply-btn" class="btn-studio-apply" title="Apply all edits to CleanBG workspace">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <span>Apply to Workspace</span>
+          </button>
+          <button id="full-studio-exit-btn" class="btn-studio-exit" title="Exit Studio (Esc)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            <span>Exit</span>
             <kbd>Esc</kbd>
           </button>
         </div>
       `;
       container.appendChild(topBar);
 
-      // Filerobot Mount Area
+      // Filerobot Mount Area (Takes rest of the viewport below header)
       const editorMount = document.createElement('div');
       editorMount.id = 'filerobot-editor-mount';
       Object.assign(editorMount.style, {
         position: 'relative',
         width: '100%',
-        height: 'calc(100vh - 54px)',
+        flex: '1',
+        height: 'calc(100vh - 56px)',
         overflow: 'hidden',
-        background: '#090d16',
+        background: '#F8FAFC',
       });
       container.appendChild(editorMount);
 
@@ -328,7 +346,7 @@ class ClearBGApp {
         container.remove();
         events.emit('notify', {
           type: 'info',
-          title: 'Full Studio Closed',
+          title: 'Studio Closed',
           message: 'Returned to CleanBG workspace.',
         });
       };
@@ -342,8 +360,72 @@ class ClearBGApp {
       };
       window.addEventListener('keydown', handleKeyEsc, true);
 
+      // Shared image application handler
+      const applyEditedDataUrl = (dataUrl: string) => {
+        const img = new Image();
+        img.onload = () => {
+          const c = document.createElement('canvas');
+          c.width = img.naturalWidth || img.width;
+          c.height = img.naturalHeight || img.height;
+          const ctx = c.getContext('2d')!;
+          ctx.drawImage(img, 0, 0);
+          const editedData = ctx.getImageData(0, 0, c.width, c.height);
+
+          if (this.processedImageData) {
+            this.processedImageData = editedData;
+            this.rawBaseImageData = editedData;
+            this.currentMask = new Uint8ClampedArray(editedData.width * editedData.height);
+            for (let i = 0; i < this.currentMask.length; i++) {
+              this.currentMask[i] = editedData.data[i * 4 + 3];
+            }
+          } else {
+            this.rawBaseImageData = editedData;
+            this.originalImageData = editedData;
+          }
+          this.refreshCanvasDisplay();
+
+          events.emit('notify', {
+            type: 'success',
+            title: 'Studio Edits Applied',
+            message: 'Your photo adjustments have been saved to the workspace.',
+          });
+
+          closeStudio();
+        };
+        img.onerror = () => {
+          console.error('[Filerobot] Failed to load edited image');
+          closeStudio();
+        };
+        img.src = dataUrl;
+      };
+
+      // Header Exit Button
       topBar.querySelector('#full-studio-exit-btn')?.addEventListener('click', () => {
         closeStudio();
+      });
+
+      // Header Apply Button
+      topBar.querySelector('#full-studio-apply-btn')?.addEventListener('click', () => {
+        try {
+          if (editorInstance && typeof editorInstance.getCurrentImgData === 'function') {
+            const res = editorInstance.getCurrentImgData();
+            const dataUrl = res?.imageData?.imageBase64 || res?.imageBase64;
+            if (dataUrl) {
+              applyEditedDataUrl(dataUrl);
+              return;
+            }
+          }
+          // Fallback: trigger Filerobot internal save button
+          const fieSaveBtn = container.querySelector('.FIE_topbar-save button, .FIE_topbar-save') as HTMLElement;
+          if (fieSaveBtn) {
+            fieSaveBtn.click();
+          } else {
+            closeStudio();
+          }
+        } catch (err) {
+          console.error('[Full Studio] Apply failed:', err);
+          closeStudio();
+        }
       });
 
       try {
@@ -364,16 +446,19 @@ class ClearBGApp {
           defaultTabId: TABS?.ADJUST || 'Adjust',
           defaultToolId: TOOLS?.BRIGHTNESS || 'Brightness',
           savingPixelRatio: 4,
-          previewPixelRatio: 2,
+          previewPixelRatio: window.devicePixelRatio || 2,
+          showBackButton: false,
+          disableSaveIfNoChanges: false,
+          closeAfterSave: false,
           annotationsCommon: {
-            fill: '#3b82f6',
-            stroke: '#3b82f6',
+            fill: '#2563EB',
+            stroke: '#2563EB',
             strokeWidth: 2,
             opacity: 1,
           },
           Text: {
             text: 'Text',
-            fill: '#ffffff',
+            fill: '#0F172A',
             fontSize: 24,
             fontFamily: 'Inter, sans-serif',
           },
@@ -384,65 +469,63 @@ class ClearBGApp {
               closeStudio();
               return;
             }
-
-            const img = new Image();
-            img.onload = () => {
-              const c = document.createElement('canvas');
-              c.width = img.width;
-              c.height = img.height;
-              const ctx = c.getContext('2d')!;
-              ctx.drawImage(img, 0, 0);
-              const editedData = ctx.getImageData(0, 0, c.width, c.height);
-
-              if (this.processedImageData) {
-                this.processedImageData = editedData;
-                this.rawBaseImageData = editedData;
-                this.currentMask = new Uint8ClampedArray(editedData.width * editedData.height);
-                for (let i = 0; i < this.currentMask.length; i++) {
-                  this.currentMask[i] = editedData.data[i * 4 + 3];
-                }
-              } else {
-                this.rawBaseImageData = editedData;
-                this.originalImageData = editedData;
-              }
-              this.refreshCanvasDisplay();
-
-              events.emit('notify', {
-                type: 'success',
-                title: 'Photo Edited',
-                message: 'Your edits have been applied to the workspace.',
-              });
-
-              closeStudio();
-            };
-            img.onerror = () => {
-              console.error('[Filerobot] Failed to load edited image');
-              closeStudio();
-            };
-            img.src = dataUrl;
+            applyEditedDataUrl(dataUrl);
           },
           onClose: () => {
             closeStudio();
           },
           theme: {
             palette: {
-              'bg-primary': '#0b0f19',
-              'bg-primary-hover': '#1e293b',
-              'bg-secondary': '#111827',
-              'bg-secondary-hover': '#1f2937',
-              'accent-primary': '#3b82f6',
-              'accent-primary-hover': '#2563eb',
-              'icons-primary': '#f8fafc',
-              'icons-secondary': '#94a3b8',
-              'borders-primary': '#1e293b',
-              'borders-secondary': '#0f172a',
-              'borders-strong': '#334155',
-              'light-shadow': 'rgba(0, 0, 0, 0.4)',
-              'warning': '#f59e0b',
-              'error': '#ef4444',
+              // Primary Light Surfaces
+              'bg-primary': '#FFFFFF',
+              'bg-primary-hover': '#F8FAFC',
+              'bg-primary-active': '#EFF6FF',
+              'bg-stateless': '#FFFFFF',
+              'bg-secondary': '#FFFFFF',
+              'bg-secondary-hover': '#F8FAFC',
+              'bg-hover': '#F1F5F9',
+              'bg-grey': '#F1F5F9',
+              'bg-base-light': '#F8FAFC',
+              'bg-base-medium': '#F1F5F9',
+              'bg-active': '#EFF6FF',
+
+              // CleanBG Blue Accent
+              'accent-primary': '#2563EB',
+              'accent-primary-hover': '#1D4ED8',
+              'accent-primary-active': '#1E40AF',
+              'accent-stateless': '#2563EB',
+
+              // High-contrast, sharp typography
+              'txt-primary': '#0F172A',
+              'txt-secondary': '#475569',
+              'txt-placeholder': '#94A3B8',
+              'btn-primary-text': '#FFFFFF',
+              'btn-secondary-text': '#0F172A',
+
+              // Refined slate icons
+              'icon-primary': '#334155',
+              'icons-primary': '#334155',
+              'icons-secondary': '#64748B',
+              'icons-primary-hover': '#0F172A',
+              'icons-secondary-hover': '#1E293B',
+              'icons-muted': '#94A3B8',
+
+              // Crisp subtle borders
+              'borders-primary': '#E2E8F0',
+              'borders-secondary': '#F1F5F9',
+              'borders-strong': '#CBD5E1',
+              'borders-item': '#E2E8F0',
+              'borders-button': '#CBD5E1',
+
+              // Shadows & Status
+              'light-shadow': 'rgba(15, 23, 42, 0.05)',
+              'medium-shadow': 'rgba(15, 23, 42, 0.08)',
+              'warning': '#F59E0B',
+              'error': '#EF4444',
+              'success': '#10B981',
             },
             typography: {
-              fontFamily: 'Inter, system-ui, sans-serif',
+              fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
             },
           },
         };
