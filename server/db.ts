@@ -8,8 +8,16 @@
 
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import dns from 'dns';
 
 dotenv.config();
+
+// Ensure reliable SRV DNS resolution for MongoDB Atlas across local & cloud environments
+try {
+  dns.setServers(['8.8.8.8', '1.1.1.1']);
+} catch {
+  // Ignored if custom servers unavailable
+}
 
 const MONGODB_URI = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/cleanbg';
 
