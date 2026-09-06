@@ -51,7 +51,6 @@ authRouter.post('/send-otp', async (req: Request, res: Response) => {
     res.json({
       success: true,
       message: result.message,
-      ...(process.env.NODE_ENV !== 'production' ? { devOtp: result.devOtp } : {}),
     });
   } catch (err: any) {
     console.error('Send OTP Error:', err);
@@ -211,7 +210,6 @@ authRouter.post('/forgot-password', async (req: Request, res: Response) => {
     res.json({
       success: true,
       message: `Password reset code sent to ${normalizedEmail}`,
-      ...(process.env.NODE_ENV !== 'production' ? { devOtp: result.devOtp } : {}),
     });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });

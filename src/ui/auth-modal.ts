@@ -178,7 +178,7 @@ function renderLoginView(container: HTMLElement): void {
       events.emit('notify', {
         type: 'info',
         title: 'OTP Dispatched',
-        message: res.message + (res.devOtp ? ` (Code: ${res.devOtp})` : ''),
+        message: res.message,
       });
       currentView = 'otp';
       renderAuthView();
@@ -267,7 +267,7 @@ function renderSignupView(container: HTMLElement): void {
       events.emit('notify', {
         type: 'info',
         title: 'OTP Sent',
-        message: res.message + (res.devOtp ? ` (Code: ${res.devOtp})` : ''),
+        message: res.message,
       });
 
       currentView = 'otp';
@@ -361,7 +361,7 @@ function renderOtpView(container: HTMLElement): void {
   container.querySelector('#btn-resend-otp')?.addEventListener('click', async () => {
     try {
       const res = await authState.sendOtp(pendingEmail, pendingOtpType);
-      events.emit('notify', { type: 'info', title: 'Code Resent', message: res.message + (res.devOtp ? ` (${res.devOtp})` : '') });
+      events.emit('notify', { type: 'info', title: 'Code Resent', message: res.message });
       startResendCountdown();
     } catch (err: any) {
       alert(err.message);
@@ -441,7 +441,7 @@ function renderForgotView(container: HTMLElement): void {
       events.emit('notify', {
         type: 'info',
         title: 'Reset Code Sent',
-        message: res.message + (res.devOtp ? ` (${res.devOtp})` : ''),
+        message: res.message,
       });
 
       currentView = 'otp';

@@ -258,7 +258,7 @@ export async function sendOtpEmail(
   otpCode: string,
   type: 'signup' | 'login' | 'reset_password',
   userName?: string
-): Promise<{ success: boolean; message: string; devOtp?: string }> {
+): Promise<{ success: boolean; message: string }> {
   const normalizedEmail = email.toLowerCase().trim();
   const { subject, html } = renderCleanBgEmail(otpCode, type, userName);
   const attachments = getEmailAttachments();
@@ -267,7 +267,6 @@ export async function sendOtpEmail(
   console.log(`✉️  [GMAIL SMTP EMAIL DISPATCH]`);
   console.log(`To: ${normalizedEmail}`);
   console.log(`Subject: ${subject}`);
-  console.log(`🔑 Verification Code (OTP): [ ${otpCode} ]`);
   console.log(`🎨 Background: #FCF5EE`);
   console.log(`🖼️  Header Logo: CleanBG.png (CID embedded)`);
   console.log(`🖼️  Footer: email-footer.png (CID embedded)`);
@@ -293,12 +292,11 @@ export async function sendOtpEmail(
     console.log('[Gmail SMTP Note] Add SMTP_USER and SMTP_PASS to .env for live inbox delivery.');
   }
 
-  // Save OTP to PostgreSQL
+  // Save OTP to PostgreSQL / MongoDB
   await saveOtpToDatabase(normalizedEmail, otpCode, type, 10);
 
   return {
     success: true,
     message: `Verification code sent to ${normalizedEmail}`,
-    devOtp: otpCode,
   };
 }

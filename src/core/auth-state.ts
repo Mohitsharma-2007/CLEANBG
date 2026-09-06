@@ -70,7 +70,7 @@ class AuthManager {
     }
   }
 
-  public async sendOtp(email: string, type: 'signup' | 'login' | 'reset_password'): Promise<{ success: boolean; message: string; devOtp?: string }> {
+  public async sendOtp(email: string, type: 'signup' | 'login' | 'reset_password'): Promise<{ success: boolean; message: string }> {
     const res = await fetch(`${API_BASE}/send-otp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -126,7 +126,7 @@ class AuthManager {
     return data.user;
   }
 
-  public async forgotPassword(email: string): Promise<{ success: boolean; message: string; devOtp?: string }> {
+  public async forgotPassword(email: string): Promise<{ success: boolean; message: string }> {
     const res = await fetch(`${API_BASE}/forgot-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
