@@ -159,16 +159,10 @@
     inputLearning.value = report.learningOutcomes || '';
     inputFuturePlan.value = report.futureWorkPlan || '';
 
-    // Show/Hide project URLs for Week 6 or when set
-    if (report.projectUrl || report.githubUrl || currentWeekIndex === 5) {
-      projectUrlsSection.style.display = 'block';
-      inputProjectUrl.value = report.projectUrl || 'https://cleanbg-ai-studio.vercel.app';
-      inputGithubUrl.value = report.githubUrl || 'https://github.com/Mohitsharma-2007/CLEANBG.git';
-    } else {
-      projectUrlsSection.style.display = 'none';
-      inputProjectUrl.value = '';
-      inputGithubUrl.value = '';
-    }
+    // Show Project URLs section for all weeks so user/agent can add URLs for any project
+    projectUrlsSection.style.display = 'block';
+    inputProjectUrl.value = report.projectUrl || '';
+    inputGithubUrl.value = report.githubUrl || '';
 
     renderTasksEditor(report.tasks);
   }
@@ -232,16 +226,14 @@
       )
       .join('');
 
-    // Project URLs section (prominent in Week 6)
+    // Project URLs section (rendered whenever a week has URLs configured)
     let urlSectionHtml = '';
-    if (report.projectUrl || report.githubUrl || isWeek6) {
-      const liveUrl = report.projectUrl || 'https://cleanbg-ai-studio.vercel.app';
-      const repoUrl = report.githubUrl || 'https://github.com/Mohitsharma-2007/CLEANBG.git';
+    if (report.projectUrl || report.githubUrl) {
       urlSectionHtml = `
         <div class="url-box">
           <div style="font-weight: bold; margin-bottom: 3pt;">PROJECT DEPLOYMENT & REPOSITORY URL:</div>
-          <div><strong>Live Web Application:</strong> <a href="${escapeHtml(liveUrl)}" target="_blank">${escapeHtml(liveUrl)}</a></div>
-          <div style="margin-top: 2pt;"><strong>GitHub Source Code:</strong> <a href="${escapeHtml(repoUrl)}" target="_blank">${escapeHtml(repoUrl)}</a></div>
+          ${report.projectUrl ? `<div><span style="font-weight: bold;">Live Web Application:</span> <a href="${escapeHtml(report.projectUrl)}" target="_blank">${escapeHtml(report.projectUrl)}</a></div>` : ''}
+          ${report.githubUrl ? `<div style="margin-top: 2pt;"><span style="font-weight: bold;">GitHub Source Code:</span> <a href="${escapeHtml(report.githubUrl)}" target="_blank">${escapeHtml(report.githubUrl)}</a></div>` : ''}
         </div>
       `;
     }
