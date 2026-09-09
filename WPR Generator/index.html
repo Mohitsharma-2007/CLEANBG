@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Amity Polytechnic WPR Generator Studio | Internship -1 [PTCHIN101]</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- Top App Navigation & Action Bar -->
+  <header class="app-header">
+    <div class="brand-section">
+      <div class="brand-badge">WPR STUDIO</div>
+      <div>
+        <h1 class="brand-title">Amity Polytechnic WPR Generator</h1>
+        <p class="brand-sub">Internship -1 [PTCHIN101] &bull; 6-Week Progress Report Suite</p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button id="btn-export-current" class="btn btn-primary" title="Export currently selected week report to A4 PDF">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
+        Export Current WPR to PDF
+      </button>
+
+      <button id="btn-export-all" class="btn btn-success" title="Export all 6 weeks into a combined 12-page A4 PDF">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        Export All 6 WPRs (Single PDF)
+      </button>
+
+      <button id="btn-save-json" class="btn btn-secondary" title="Save current report configurations to a JSON file">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Save JSON
+      </button>
+
+      <button id="btn-load-json" class="btn btn-secondary" title="Import existing WPR JSON configuration">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Import JSON
+      </button>
+
+      <button id="btn-reset-defaults" class="btn btn-outline-danger" title="Reset all data back to CleanBG project defaults">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+        Reset
+      </button>
+    </div>
+  </header>
+
+  <!-- App Body Layout -->
+  <div class="app-container">
+
+    <!-- Left Editor Sidebar -->
+    <aside class="editor-sidebar">
+      <!-- Week Tabs Navigation -->
+      <nav class="week-selector-tabs" id="week-tabs">
+        <!-- Injected dynamically via JS -->
+      </nav>
+
+      <!-- Scrollable Form Controls -->
+      <div class="sidebar-scroll">
+
+        <!-- Student & Faculty Profile Section -->
+        <div class="editor-section">
+          <div class="section-title">
+            <span>Student & Faculty Profile</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="input-student-name">Student Full Name</label>
+            <input type="text" id="input-student-name" class="form-input" placeholder="e.g. Mohit Sharma" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="input-enroll-no">Enrollment Number</label>
+            <input type="text" id="input-enroll-no" class="form-input" placeholder="e.g. A41890824008" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="input-program">Academic Program</label>
+            <input type="text" id="input-program" class="form-input" placeholder="e.g. Diploma in Computer Engineering" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="input-faculty-guide">Faculty Guide's Name</label>
+            <input type="text" id="input-faculty-guide" class="form-input" placeholder="e.g. Prof. Krashnkant Gupta" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="input-institution">Institution Name</label>
+            <input type="text" id="input-institution" class="form-input" placeholder="e.g. AMITY POLYTECHNIC, AUGN Campus" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="input-course">Course Title & Code</label>
+            <input type="text" id="input-course" class="form-input" placeholder="e.g. INTERNSHIP -1 [PTCHIN101]" />
+          </div>
+        </div>
+
+        <!-- Selected Week Content Section -->
+        <div class="editor-section">
+          <div class="section-title">
+            <span>Report Content</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="input-date-range">Date Range</label>
+            <input type="text" id="input-date-range" class="form-input" placeholder="e.g. 31/08/2026 - 06/09/2026" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="input-target">Target of the Week</label>
+            <textarea id="input-target" class="form-textarea" rows="3" placeholder="Technical goal for the week..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label class="form-label" style="margin-bottom: 0;">Daily Tasks Completed</label>
+              <button id="btn-add-task" class="btn btn-secondary" style="padding: 3px 8px; font-size: 11px;">+ Add Day</button>
+            </div>
+            <div id="task-list-editor">
+              <!-- Dynamically populated daily task rows -->
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="input-learning">Learning Outcomes</label>
+            <textarea id="input-learning" class="form-textarea" rows="4" placeholder="Deep technical outcomes and takeaways..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="input-future-plan">Future Work Plan</label>
+            <textarea id="input-future-plan" class="form-textarea" rows="3" placeholder="Plan for next week..."></textarea>
+          </div>
+
+          <!-- Project URLs Section (Active for Week 6) -->
+          <div id="project-urls-section" class="form-group" style="display: none; padding-top: 8px; border-top: 1px dashed #cbd5e1;">
+            <label class="form-label" for="input-project-url">Live Deployment URL (Final Week)</label>
+            <input type="text" id="input-project-url" class="form-input" placeholder="https://cleanbg-ai-studio.vercel.app" />
+
+            <label class="form-label" for="input-github-url" style="margin-top: 8px;">GitHub Repository URL</label>
+            <input type="text" id="input-github-url" class="form-input" placeholder="https://github.com/Mohitsharma-2007/CLEANBG.git" />
+          </div>
+        </div>
+
+        <!-- Student Signature Section -->
+        <div class="editor-section">
+          <div class="section-title">
+            <span>Student Signature</span>
+          </div>
+
+          <div class="form-group" style="display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" id="toggle-signature" checked />
+            <label class="form-label" for="toggle-signature" style="margin-bottom: 0; cursor: pointer;">Include Signature in Report</label>
+          </div>
+
+          <div class="signature-preview-box">
+            <img id="signature-thumbnail" class="signature-thumb" src="signature.png" alt="Signature preview" />
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <label for="signature-file-input" class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px; cursor: pointer;">Upload Signature</label>
+              <button id="btn-reset-signature" class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;">Reset Default</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </aside>
+
+    <!-- Right Live Preview Pane -->
+    <main class="preview-pane">
+      <div class="preview-toolbar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        <span id="preview-status-text">Live Preview: Week 01 (31/08/2026 - 06/09/2026)</span>
+        <span style="opacity: 0.5;">&bull;</span>
+        <span style="font-size: 11.5px; opacity: 0.8;">💡 Tip: You can click & type directly on any text in the A4 sheets below</span>
+      </div>
+
+      <!-- Container where A4 sheets are rendered -->
+      <div id="preview-sheet-container" style="display: flex; flex-direction: column; gap: 28px; align-items: center;">
+        <!-- Injected dynamically via JS -->
+      </div>
+    </main>
+
+  </div>
+
+  <!-- Hidden File Inputs -->
+  <input type="file" id="json-file-input" accept=".json" style="display: none;" />
+  <input type="file" id="signature-file-input" accept="image/*" style="display: none;" />
+
+  <!-- Toast Notification -->
+  <div id="toast-notification" class="toast-msg"></div>
+
+  <!-- Scripts -->
+  <script src="signature-data.js"></script>
+  <script src="default-data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

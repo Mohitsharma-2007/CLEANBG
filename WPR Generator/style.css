@@ -1,0 +1,626 @@
+/* WPR Generator Studio Stylesheet */
+:root {
+  --primary-color: #2563eb;
+  --primary-hover: #1d4ed8;
+  --primary-light: #eff6ff;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --bg-app: #f1f5f9;
+  --bg-card: #ffffff;
+  --border-color: #e2e8f0;
+  --sidebar-width: 440px;
+  --header-height: 64px;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-report: 'Calibri', 'Arial', 'Liberation Sans', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* App Header */
+.app-header {
+  height: var(--header-height);
+  background: #ffffff;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  z-index: 10;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.brand-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-badge {
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+}
+
+.brand-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.brand-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid transparent;
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  color: #ffffff;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+}
+
+.btn-secondary {
+  background-color: #ffffff;
+  color: #334155;
+  border-color: #cbd5e1;
+}
+
+.btn-secondary:hover {
+  background-color: #f8fafc;
+  border-color: #94a3b8;
+}
+
+.btn-success {
+  background-color: #059669;
+  color: #ffffff;
+}
+
+.btn-success:hover {
+  background-color: #047857;
+}
+
+.btn-outline-danger {
+  background: #ffffff;
+  color: #ef4444;
+  border-color: #fca5a5;
+}
+
+.btn-outline-danger:hover {
+  background: #fef2f2;
+}
+
+/* App Main Layout */
+.app-container {
+  flex: 1;
+  display: flex;
+  height: calc(100vh - var(--header-height));
+  overflow: hidden;
+}
+
+/* Left Sidebar (Editor) */
+.editor-sidebar {
+  width: var(--sidebar-width);
+  background: #ffffff;
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  height: 100%;
+}
+
+.week-selector-tabs {
+  display: flex;
+  background: #f8fafc;
+  border-bottom: 1px solid var(--border-color);
+  padding: 8px 12px 0;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.week-selector-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.week-tab-btn {
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.week-tab-btn:hover {
+  color: var(--primary-color);
+  background: #ffffff;
+}
+
+.week-tab-btn.active {
+  color: var(--primary-color);
+  background: #ffffff;
+  border-color: var(--border-color);
+  border-top: 2px solid var(--primary-color);
+}
+
+.sidebar-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px 20px 40px;
+}
+
+.editor-section {
+  margin-bottom: 24px;
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.section-title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #475569;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.form-group {
+  margin-bottom: 12px;
+}
+
+.form-group:last-child {
+  margin-bottom: 0;
+}
+
+.form-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 4px;
+}
+
+.form-input,
+.form-textarea {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 13px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  color: #0f172a;
+  background: #f8fafc;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.form-input:focus,
+.form-textarea:focus {
+  border-color: var(--primary-color);
+  background: #ffffff;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+}
+
+.form-textarea {
+  min-height: 70px;
+  resize: vertical;
+}
+
+.task-row-editor {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  align-items: flex-start;
+  padding: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+
+.task-day-input {
+  width: 130px;
+  flex-shrink: 0;
+}
+
+.task-desc-input {
+  flex: 1;
+}
+
+.btn-remove-task {
+  padding: 6px 8px;
+  background: #fee2e2;
+  color: #ef4444;
+  border: none;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-remove-task:hover {
+  background: #fca5a5;
+  color: #991b1b;
+}
+
+.signature-preview-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+  padding: 8px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+  background: #f8fafc;
+}
+
+.signature-thumb {
+  max-width: 100px;
+  max-height: 48px;
+  object-fit: contain;
+}
+
+/* Right Panel (A4 Live Preview) */
+.preview-pane {
+  flex: 1;
+  background: #475569;
+  overflow-y: auto;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+}
+
+.preview-toolbar {
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(8px);
+  padding: 8px 16px;
+  border-radius: 30px;
+  color: #ffffff;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.preview-toolbar span {
+  opacity: 0.85;
+}
+
+/* A4 Sheet Dimensions & Strict Print Replica */
+.a4-sheet {
+  width: 210mm;
+  min-height: 297mm;
+  height: 297mm;
+  padding: 20mm 20mm;
+  background: #ffffff;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+  font-family: var(--font-report);
+  color: #000000;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  page-break-after: always;
+  break-after: page;
+}
+
+/* Typography matching Amity Polytechnic Official WPR */
+.report-header {
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.inst-title {
+  font-size: 17pt;
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-bottom: 8pt;
+  letter-spacing: 0.2px;
+}
+
+.internship-title {
+  font-size: 11.5pt;
+  font-weight: bold;
+  margin-bottom: 3pt;
+  letter-spacing: 0.3px;
+}
+
+.wpr-title {
+  font-size: 12pt;
+  font-weight: bold;
+  margin-bottom: 10pt;
+  letter-spacing: 0.5px;
+}
+
+.meta-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11pt;
+  margin-bottom: 4pt;
+}
+
+.meta-item {
+  font-size: 11pt;
+  margin-bottom: 4pt;
+}
+
+.meta-label {
+  font-weight: bold;
+}
+
+.meta-val {
+  font-weight: normal;
+}
+
+.divider-line {
+  border: none;
+  border-top: 1.5px solid #000000;
+  margin: 8pt 0 10pt;
+}
+
+.faculty-guide-row {
+  font-size: 11pt;
+  margin-bottom: 12pt;
+}
+
+.section-heading {
+  font-size: 11pt;
+  font-weight: bold;
+  margin-bottom: 6pt;
+  text-transform: uppercase;
+}
+
+.target-content {
+  font-size: 11pt;
+  line-height: 1.4;
+  margin-bottom: 12pt;
+  min-height: 38pt;
+  text-align: justify;
+}
+
+/* WPR Table */
+.wpr-table-title {
+  font-size: 11pt;
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-bottom: 6pt;
+}
+
+.wpr-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 14pt;
+}
+
+.wpr-table th,
+.wpr-table td {
+  border: 1px solid #000000;
+  padding: 6pt 8pt;
+  font-size: 10.5pt;
+  line-height: 1.35;
+  text-align: left;
+  vertical-align: top;
+}
+
+.wpr-table th {
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.wpr-table th:first-child,
+.wpr-table td:first-child {
+  width: 28%;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.wpr-table td:last-child {
+  width: 72%;
+  text-align: justify;
+}
+
+/* Page 2 Elements */
+.learning-outcomes-content,
+.future-plan-content {
+  font-size: 11pt;
+  line-height: 1.45;
+  margin-bottom: 14pt;
+  text-align: justify;
+  min-height: 60pt;
+}
+
+.url-box {
+  margin: 14pt 0;
+  padding: 8pt 10pt;
+  border: 1px solid #000000;
+  background-color: #fafafa;
+  font-size: 10.5pt;
+}
+
+.url-box a {
+  color: #000000;
+  text-decoration: underline;
+  word-break: break-all;
+}
+
+.signature-container {
+  margin-top: auto;
+  padding-top: 30pt;
+  margin-bottom: 20pt;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.signature-img-wrapper {
+  height: 50pt;
+  margin-bottom: 4pt;
+  display: flex;
+  align-items: flex-end;
+}
+
+.signature-img {
+  max-height: 50pt;
+  max-width: 160pt;
+  object-fit: contain;
+}
+
+.signature-line-text {
+  font-size: 11pt;
+  font-weight: bold;
+}
+
+/* Page Number Badge */
+.page-footer-note {
+  position: absolute;
+  bottom: 10mm;
+  right: 20mm;
+  font-size: 9pt;
+  color: #666666;
+}
+
+/* Inline Editable Highlight */
+[contenteditable="true"]:hover {
+  outline: 1px dashed #93c5fd;
+  cursor: text;
+}
+
+[contenteditable="true"]:focus {
+  outline: 2px solid #2563eb;
+  background: rgba(239, 246, 255, 0.4);
+}
+
+/* Modals & Popups */
+.toast-msg {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: #0f172a;
+  color: #ffffff;
+  padding: 10px 18px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.2s ease;
+  pointer-events: none;
+}
+
+.toast-msg.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* PRINT STYLES */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  body {
+    background: #ffffff !important;
+    height: auto !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .app-header,
+  .editor-sidebar,
+  .preview-toolbar,
+  .toast-msg {
+    display: none !important;
+  }
+
+  .app-container {
+    height: auto !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+
+  .preview-pane {
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+
+  .a4-sheet {
+    width: 210mm !important;
+    height: 297mm !important;
+    min-height: 297mm !important;
+    max-height: 297mm !important;
+    margin: 0 !important;
+    padding: 20mm 20mm !important;
+    box-shadow: none !important;
+    border: none !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    overflow: hidden !important;
+  }
+
+  .a4-sheet:last-child {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  [contenteditable="true"] {
+    outline: none !important;
+    background: transparent !important;
+  }
+}
