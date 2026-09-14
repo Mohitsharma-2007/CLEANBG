@@ -53,21 +53,43 @@
       "weekNumber": "02",
       "weekLabel": "WEEKLY PROGRESS REPORT – 02",
       "dateRange": "07/09/2026 - 13/09/2026",
-      "targetOfTheWeek": "",
+      "targetOfTheWeek": "Full-stack architecture, development, and deployment of AttendX — an institutional attendance and presence verification platform with rotating QR codes, GPS geofencing, live camera evidence, OTP-based authentication via Gmail SMTP, MongoDB Atlas backend, and native Android APK distribution.",
       "tasks": [
-        { "day": "Day 1 – 07/09/2026", "task": "" },
-        { "day": "Day 2 – 08/09/2026", "task": "" },
-        { "day": "Day 3 – 09/09/2026", "task": "" },
-        { "day": "Day 4 – 10/09/2026", "task": "" },
-        { "day": "Day 5 – 11/09/2026", "task": "" },
-        { "day": "Day 6 – 12/09/2026", "task": "" },
-        { "day": "Day 7 – 13/09/2026", "task": "" }
+        {
+          "day": "Day 1 – 07/09/2026",
+          "task": "Migrated AttendX backend from Supabase/PostgreSQL to MongoDB Atlas with a universal SQL-to-MongoDB query translation layer; implemented dual-engine database abstraction (MongoDB/SQLite) with automatic fallback for offline-first local development; wired Gmail SMTP OTP engine with branded HTML email templates."
+        },
+        {
+          "day": "Day 2 – 08/09/2026",
+          "task": "Built the institutional Mail Center module with event-driven mail generation for enrollment confirmations, attendance alerts, password resets, and admin announcements; implemented notification bell with unread count tracking and recipient picker with user directory search."
+        },
+        {
+          "day": "Day 3 – 09/09/2026",
+          "task": "Developed the LocalQueryBuilder API client layer providing Supabase-compatible interface over the Express REST API; implemented PostgREST-style filter encoding (eq., neq., gt., gte., lt., lte.) with MongoDB and SQLite query translation; built offline demo-data fallback engine."
+        },
+        {
+          "day": "Day 4 – 10/09/2026",
+          "task": "Designed and implemented the multi-step attendance capture flow: rotating QR code scanning via ML Kit Barcode Scanner, high-accuracy GPS geofencing with watchPosition pattern, dual camera evidence capture (selfie + classroom photo), and server-side HMAC token validation."
+        },
+        {
+          "day": "Day 5 – 11/09/2026",
+          "task": "Built the native Android APK using Capacitor with developer mode detection plugin (Settings.Global.DEVELOPMENT_SETTINGS_ENABLED), mock location blocking, in-app update system via GitHub Releases API, and custom app versioning with semantic release notes."
+        },
+        {
+          "day": "Day 6 – 12/09/2026",
+          "task": "Critical security hardening: scrubbed leaked SMTP and JWT credentials from git history via orphan branch rewrite; added authentication middleware to all data write endpoints; fixed SQL injection prevention with parameterized queries and table allowlists."
+        },
+        {
+          "day": "Day 7 – 13/09/2026",
+          "task": "Full codebase audit identifying 17 bugs across server and frontend; fixed seedDefaults() crash from missing schema tables, QR token extraction regex mismatch, Download APK showing inside installed app; deployed production build to Vercel and pushed clean git history to GitHub."
+        }
       ],
-      "learningOutcomes": "",
-      "futureWorkPlan": "",
-      "projectUrl": "",
-      "githubUrl": ""
+      "learningOutcomes": "End-to-end mastery of hybrid mobile-web architecture using React + Capacitor for cross-platform deployment; MongoDB Atlas integration with SQL-to-NoSQL translation patterns; Gmail SMTP transactional email infrastructure with Nodemailer; Android native plugin development via Java-to-JavaScript bridge; Express.js REST API design with JWT-based session authentication; production security practices including credential rotation, git history scrubbing, and parameterized query patterns.",
+      "futureWorkPlan": "AttendX Week 2 development completed with functional web app, Android APK, and cloud deployment. Continuing with UI/UX polish, face recognition integration, and MongoDB Atlas App Services functions for Week 3.",
+      "projectUrl": "https://attendx.vercel.app",
+      "githubUrl": "https://github.com/Mohitsharma-2007/AttendX.git"
     },
+
     {
       "weekNumber": "03",
       "weekLabel": "WEEKLY PROGRESS REPORT – 03",

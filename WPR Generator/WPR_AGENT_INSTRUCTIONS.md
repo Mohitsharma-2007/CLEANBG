@@ -14,7 +14,10 @@ Instead of mixing reports across scattered repositories, all 6 Weekly Progress R
   - Entire project built, tested, and released under Week 1.
   - Live Web App: `https://cleanbg-ai-studio.vercel.app`
   - GitHub Repo: `https://github.com/Mohitsharma-2007/CLEANBG.git`
-- **Week 2 (`07/09/2026 - 13/09/2026`)**: *Reserved for Week 2 Project* (Blank / Pending)
+- **Week 2 (`07/09/2026 - 13/09/2026`)**: **AttendX (Institutional Attendance & Presence Infrastructure)**
+  - Full-stack attendance platform with rotating QR, GPS geofencing, camera evidence, MongoDB Atlas, and native Android APK.
+  - Live Web App: `https://attendx.vercel.app`
+  - GitHub Repo: `https://github.com/Mohitsharma-2007/AttendX.git`
 - **Week 3 (`14/09/2026 - 20/09/2026`)**: *Reserved for Week 3 Project* (Blank / Pending)
 - **Week 4 (`21/09/2026 - 27/09/2026`)**: *Reserved for Week 4 Project* (Blank / Pending)
 - **Week 5 (`28/09/2026 - 04/10/2026`)**: *Reserved for Week 5 Project* (Blank / Pending)
