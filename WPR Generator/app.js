@@ -46,7 +46,7 @@
   // Initialize
   async function init() {
     try {
-      const response = await fetch('wpr_data.json');
+      const response = await fetch('wpr_data.json?t=' + Date.now());
       if (response.ok) {
         wprData = await response.json();
       } else {
